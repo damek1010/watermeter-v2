@@ -1,13 +1,11 @@
 #include "Arduino.h"
 #include "ESP8266WiFi.h"
-#include <ESP8266WebServer.h>
-#include <WiFiUdp.h>
-#include <NTPClient.h>
 #include "Constants.h"
-#include <SD.h>
+#include "routes.h"
+#include "TimeService.h"
 
-const char *ssid = "DESKTO";
-const char *password = "23X5q)23";
+const char *ssid = "912B";
+const char *password = "splot123";
 
 uint32_t utime = 0;
 
@@ -27,7 +25,8 @@ uint32_t pulseCounter = 0;
 
 static unsigned long last_interrupt_time = 0;
 
-void ICACHE_RAM_ATTR handleInterrupt() {
+void ICACHE_RAM_ATTR handleInterrupt()
+{
   unsigned long interrupt_time = millis();
   // If interrupts come faster than 100ms, assume it's a bounce and ignore
   if (interrupt_time - last_interrupt_time > 100)
@@ -35,16 +34,16 @@ void ICACHE_RAM_ATTR handleInterrupt() {
     ++pulseCounter;
     //Serial.println(pulseCounter);
 
-    //Serial.println("writing to file");
+    Serial.println("writing to file");
   }
   last_interrupt_time = interrupt_time;
 }
 
-void ICACHE_RAM_ATTR stopProgram() {
+void ICACHE_RAM_ATTR stopProgram()
+{
   //Serial.println("Disabling Watermeter");
   end_of_work = true;
 }
-
 
 struct Measurement
 {
@@ -52,32 +51,16 @@ struct Measurement
   String time;
 };
 
-WiFiUDP ntpUDP;
-
-NTPClient timeClient(ntpUDP, "europe.pool.ntp.org", 3600, 60000);
-
 File csv;
 
-ESP8266WebServer server(80);
-
-String getCurrentDate();
-
 void saveMeasurement(int value);
-
-void handleRoot();
-
-void handleMeasurements();
-
-void handleSettings();
-
-void handleNotFound();
-
-void sendFile(String filename, String mimetype = "text/html");
 
 void setup()
 {
   Serial.begin(115200);
   delay(10);
+
+  system_update_cpu_freq(SYS_CPU_160MHZ);
 
   Serial.print("Initializing SD card...");
 
@@ -109,15 +92,15 @@ void setup()
 
   timeClient.begin();
 
-  server.on("/", handleRoot);                     // Call the 'handleRoot' function when a client requests URI "/"
-  server.on("/measurements", handleMeasurements); // Call the 'handleRoot' function when a client requests URI "/"
+  server.on("/", handleRoot);
+  server.on("/measurements", handleMeasurements);
   server.on("/style.css", []() {
     sendFile("/web/style.css", "text/css");
   });
   server.on("/js/Chart.bundle.min.js", []() {
     sendFile("/web/js/Chart.bundle.min.js", "application/javascript");
   });
-  server.onNotFound(handleNotFound); // When a client requests an unknown URI (i.e. something other than "/"), call function "handleNotFound"
+  server.onNotFound(handleNotFound);
   server.on("/settings.html", handleSettings);
   server.on("/index.html", handleRoot);
   server.begin();
@@ -126,20 +109,6 @@ void setup()
 void loop()
 {
   server.handleClient();
-
-  // saveMeasurement(10);
-  // delay(3000);
-}
-
-String getCurrentDate()
-{
-  time_t rawtime = timeClient.getEpochTime();
-  struct tm ts = *localtime(&rawtime);
-  char buf[80];
-  strftime(buf, sizeof(buf), "%Y-%m-%d", &ts);
-  Serial.println(buf);
-
-  return buf;
 }
 
 void saveMeasurement(int value)
@@ -182,57 +151,4 @@ void saveMeasurement(int value)
 
   csv.println(buf);
   csv.close();
-}
-
-void handleRoot()
-{
-  sendFile("/web/index.html");
-}
-
-void handleMeasurements()
-{
-  String content;
-  String filename = String(getCurrentDate());
-  filename.concat(".csv");
-
-  sendFile(filename, "text/plain");
-}
-
-void handleSettings()
-{
-  sendFile("/web/settings.html");
-}
-
-void handleNotFound()
-{
-  server.send(404, "text/html", "404: Not found"); // Send HTTP status 404 (Not Found) when there's no handler for the URI in the request
-}
-
-void sendFile(String filename, String mimetype)
-{
-  File file = SD.open(filename);
-  String content = "";
-  server.setContentLength(file.size());
-  server.send(200, mimetype, "");
-  int partSize = 0;
-  while (file.available())
-  {
-    if (partSize < MAX_PART_SIZE)
-    {
-      content.concat((char)file.read());
-      partSize++;
-    }
-    else
-    {
-      server.sendContent(content);
-      partSize = 0;
-      content.clear();
-    }
-  };
-  if (partSize > 0)
-  {
-    server.sendContent(content);
-  }
-
-  file.close();
 }

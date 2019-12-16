@@ -27,7 +27,8 @@ uint32_t pulseCounter = 0;
 
 static unsigned long last_interrupt_time = 0;
 
-void ICACHE_RAM_ATTR handleInterrupt() {
+void ICACHE_RAM_ATTR handleInterrupt()
+{
   unsigned long interrupt_time = millis();
   // If interrupts come faster than 100ms, assume it's a bounce and ignore
   if (interrupt_time - last_interrupt_time > 100)
@@ -40,15 +41,16 @@ void ICACHE_RAM_ATTR handleInterrupt() {
   last_interrupt_time = interrupt_time;
 }
 
-void ICACHE_RAM_ATTR stopProgram() {
+void ICACHE_RAM_ATTR stopProgram()
+{
   //Serial.println("Disabling Watermeter");
   end_of_work = true;
 }
 
-
 struct Measurement
 {
-  int value;
+  uint32_t value;
+  uint32_t delta;
   String time;
 };
 
@@ -62,7 +64,7 @@ ESP8266WebServer server(80);
 
 String getCurrentDate();
 
-void saveMeasurement(int value);
+void saveMeasurement(uint32_t value, uint32_t delta);
 
 void handleRoot();
 
@@ -73,6 +75,8 @@ void handleSettings();
 void handleNotFound();
 
 void sendFile(String filename, String mimetype = "text/html");
+
+void saving_routine();
 
 void setup()
 {
@@ -127,6 +131,13 @@ void loop()
 {
   server.handleClient();
 
+  time_millis = millis();
+
+  if (time_millis - last_time_of_save > SAVE_PERIOD)
+  {
+    saving_routine();
+  }
+
   // saveMeasurement(10);
   // delay(3000);
 }
@@ -142,7 +153,7 @@ String getCurrentDate()
   return buf;
 }
 
-void saveMeasurement(int value)
+void saveMeasurement(uint32_t value, uint32_t delta)
 {
   /*
   *
@@ -160,6 +171,7 @@ void saveMeasurement(int value)
   Measurement measurement;
   measurement.time = timeClient.getFormattedTime();
   measurement.value = value;
+  measurement.delta = delta;
 
   /*
   *
@@ -179,6 +191,8 @@ void saveMeasurement(int value)
   String buf = String(measurement.value);
   buf.concat(", ");
   buf.concat(measurement.time);
+  buf.concat(", ");
+  buf.concat(measurement.delta);
 
   csv.println(buf);
   csv.close();
@@ -235,4 +249,34 @@ void sendFile(String filename, String mimetype)
   }
 
   file.close();
+}
+
+void saving_routine()
+{
+  delay(0);
+  last_time_of_save = time_millis;
+
+  //if day chnged, create new file
+  // if (ts.getDayNumber() != dayNumber)
+  // {
+  //   // dayNumber = TimeService::getInstance().getDayNumber();
+  // }
+
+  saveMeasurement(pulseCounter, pulseCounter - lastMeasurement);
+
+  utime += 3;
+  Serial.println("4");
+
+  lastMeasurement = pulseCounter;
+
+  if (end_of_work)
+  {
+    noInterrupts();
+
+    csv.close();
+    while (1)
+    {
+      delay(1000);
+    }
+  }
 }

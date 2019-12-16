@@ -6,8 +6,45 @@
 #include "Constants.h"
 #include <SD.h>
 
-const char *ssid = "912B";
-const char *password = "splot123";
+const char *ssid = "DESKTO";
+const char *password = "23X5q)23";
+
+uint32_t utime = 0;
+
+uint32_t lastMeasurement = 0;
+
+short dayNumber = 0;
+
+bool end_of_work = false;
+
+long last_time_of_save = millis();
+
+long SAVE_PERIOD = 10000;
+
+long time_millis;
+
+uint32_t pulseCounter = 0;
+
+static unsigned long last_interrupt_time = 0;
+
+void ICACHE_RAM_ATTR handleInterrupt() {
+  unsigned long interrupt_time = millis();
+  // If interrupts come faster than 100ms, assume it's a bounce and ignore
+  if (interrupt_time - last_interrupt_time > 100)
+  {
+    ++pulseCounter;
+    //Serial.println(pulseCounter);
+
+    //Serial.println("writing to file");
+  }
+  last_interrupt_time = interrupt_time;
+}
+
+void ICACHE_RAM_ATTR stopProgram() {
+  //Serial.println("Disabling Watermeter");
+  end_of_work = true;
+}
+
 
 struct Measurement
 {
@@ -50,6 +87,12 @@ void setup()
     return;
   }
   Serial.println("initialization done.");
+
+  pinMode(PIN_PULSE_COUNTER, INPUT_PULLUP);
+  attachInterrupt(digitalPinToInterrupt(PIN_PULSE_COUNTER), handleInterrupt, FALLING);
+
+  pinMode(PIN_TURN_OFF, INPUT_PULLUP);
+  attachInterrupt(digitalPinToInterrupt(PIN_TURN_OFF), stopProgram, FALLING);
 
   WiFi.begin(ssid, password);
 

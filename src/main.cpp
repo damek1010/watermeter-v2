@@ -4,8 +4,8 @@
 #include "routes.h"
 #include "TimeService.h"
 
-const char *ssid = "912B";
-const char *password = "splot123";
+const char *ssid = "";
+const char *password = "";
 
 uint32_t utime = 0;
 
@@ -47,13 +47,14 @@ void ICACHE_RAM_ATTR stopProgram()
 
 struct Measurement
 {
-  int value;
+  uint32_t value;
+  uint32_t delta;
   String time;
 };
 
 File csv;
 
-void saveMeasurement(int value);
+void saving_routine();
 
 void setup()
 {
@@ -109,9 +110,20 @@ void setup()
 void loop()
 {
   server.handleClient();
+
+  time_millis = millis();
+
+  if (time_millis - last_time_of_save > SAVE_PERIOD)
+  {
+    saving_routine();
+  }
+
+  // saveMeasurement(10);
+  // delay(3000);
 }
 
-void saveMeasurement(int value)
+
+void saveMeasurement(uint32_t value, uint32_t delta)
 {
   /*
   *
@@ -129,6 +141,7 @@ void saveMeasurement(int value)
   Measurement measurement;
   measurement.time = timeClient.getFormattedTime();
   measurement.value = value;
+  measurement.delta = delta;
 
   /*
   *
@@ -148,7 +161,39 @@ void saveMeasurement(int value)
   String buf = String(measurement.value);
   buf.concat(", ");
   buf.concat(measurement.time);
+  buf.concat(", ");
+  buf.concat(measurement.delta);
 
   csv.println(buf);
   csv.close();
+}
+
+void saving_routine()
+{
+  delay(0);
+  last_time_of_save = time_millis;
+
+  //if day chnged, create new file
+  // if (ts.getDayNumber() != dayNumber)
+  // {
+  //   // dayNumber = TimeService::getInstance().getDayNumber();
+  // }
+
+  saveMeasurement(pulseCounter, pulseCounter - lastMeasurement);
+
+  utime += 3;
+  Serial.println("4");
+
+  lastMeasurement = pulseCounter;
+
+  if (end_of_work)
+  {
+    noInterrupts();
+
+    csv.close();
+    while (1)
+    {
+      delay(1000);
+    }
+  }
 }

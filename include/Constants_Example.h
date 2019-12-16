@@ -8,4 +8,16 @@
 
 #define MAX_PART_SIZE 512
 
+
+//CLOCK
+#define PIN_DAT D4
+#define PIN_RST D2 
+
+//MEASURING_WATER
+#define PIN_PULSE_COUNTER D3
+
+//TURN_OFF_WATERMETER
+#define PIN_TURN_OFF D0
+
+
 #endif

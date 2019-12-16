@@ -6,4 +6,6 @@
 #define PIN_MOSI 13
 #define PIN_CS 15
 
+#define MAX_PART_SIZE 512
+
 #endif

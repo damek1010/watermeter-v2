@@ -145,12 +145,16 @@ void loop()
 
   if (ACCESS_POINT_WORING)
   {
-    server.handleClient();
-    delay(100);
-    if (ACCESS_POINT_SAVED_RESTART_NOW)
+    while (1)
     {
-      save_network_informations(access_point_saved_ssid, access_point_saved_password);
-      resetFunc();
+      server.handleClient();
+      delay(100);
+      if (ACCESS_POINT_SAVED_RESTART_NOW)
+      {
+        save_network_informations(access_point_saved_ssid, access_point_saved_password);
+        delay(200);
+        resetFunc();
+      }
     }
   }
 

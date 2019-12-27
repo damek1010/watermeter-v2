@@ -26,7 +26,7 @@ void sendFile(String filename, String mimetype = "text/html")
     server.send(200, mimetype, "");
     while (file.available())
     {
-        while (file.available() && ++partSize <= MAX_PART_SIZE )
+        while (file.available() && ++partSize <= MAX_PART_SIZE)
         {
             *(last++) = file.read();
         }
@@ -44,27 +44,29 @@ void handleRoot()
     sendFile("/web/index.html");
 }
 
-void handleAPSettings(){
+void handleAPSettings()
+{
     sendFile("/web/apsettings.html");
 }
 
-void displaySave(){
+void displaySave()
+{
     sendFile("/web/apsave.html");
 }
 
-void handleSaveAPSettings(){
+void handleSaveAPSettings()
+{
 
-    access_point_saved_ssid  = server.arg("ssid");
+    access_point_saved_ssid = server.arg("ssid");
     access_point_saved_password = server.arg("password");
 
     Serial.println(access_point_saved_ssid + " " + access_point_saved_password);
-    
 
-   // server.sendHeader("Location", "/save");
+    // server.sendHeader("Location", "/save");
     displaySave();
     delay(3000);
     ACCESS_POINT_SAVED_RESTART_NOW = true;
-    delay(100);
+    delay(1000);
 }
 
 void handleMeasurements()

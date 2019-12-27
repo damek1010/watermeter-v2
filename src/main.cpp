@@ -25,6 +25,12 @@ uint32_t pulseCounter = 0;
 
 static unsigned long last_interrupt_time = 0;
 
+const long MAX_WIFI_INTIALIZE_TIME = 10000;
+long initialization_time_start, initialization_time;
+
+bool sd_initialization_result; 
+
+
 void ICACHE_RAM_ATTR handleInterrupt()
 {
   unsigned long interrupt_time = millis();
@@ -56,55 +62,47 @@ File csv;
 
 void saving_routine();
 
+bool system_initialize();
+
+bool sd_initialize();
+
+bool interrupts_initialize();
+
+bool wifi_initialize();
+
+bool access_point_initialize();
+
 void setup()
 {
-  Serial.begin(115200);
-  delay(10);
 
-  system_update_cpu_freq(SYS_CPU_160MHZ);
+  system_initialize();
 
-  Serial.print("Initializing SD card...");
+//TODO uzyc to do wyswietlenia komunikatu na stronach, ze z sd jest co nie tak
+  sd_initialization_result = sd_initialize();
 
-  if (!SD.begin(PIN_CS))
+  interrupts_initialize();
+
+  if (wifi_initialize())
   {
-    Serial.println("initialization failed!");
-    return;
+    timeClient.begin();
+
+    server.on("/", handleRoot);
+    server.on("/measurements", handleMeasurements);
+    server.on("/style.css", []() {
+      sendFile("/web/style.css", "text/css");
+    });
+    server.on("/js/Chart.bundle.min.js", []() {
+      sendFile("/web/js/Chart.bundle.min.js", "application/javascript");
+    });
+    server.onNotFound(handleNotFound);
+    server.on("/settings.html", handleSettings);
+    server.on("/index.html", handleRoot);
+    server.begin();
   }
-  Serial.println("initialization done.");
-
-  pinMode(PIN_PULSE_COUNTER, INPUT_PULLUP);
-  attachInterrupt(digitalPinToInterrupt(PIN_PULSE_COUNTER), handleInterrupt, FALLING);
-
-  pinMode(PIN_TURN_OFF, INPUT_PULLUP);
-  attachInterrupt(digitalPinToInterrupt(PIN_TURN_OFF), stopProgram, FALLING);
-
-  WiFi.begin(ssid, password);
-
-  while (WiFi.status() != WL_CONNECTED)
+  else
   {
-    delay(500);
-    Serial.print(".");
+    access_point_initialize();
   }
-
-  Serial.println("");
-  Serial.println("WiFi connected");
-  Serial.println("IP address: ");
-  Serial.println(WiFi.localIP());
-
-  timeClient.begin();
-
-  server.on("/", handleRoot);
-  server.on("/measurements", handleMeasurements);
-  server.on("/style.css", []() {
-    sendFile("/web/style.css", "text/css");
-  });
-  server.on("/js/Chart.bundle.min.js", []() {
-    sendFile("/web/js/Chart.bundle.min.js", "application/javascript");
-  });
-  server.onNotFound(handleNotFound);
-  server.on("/settings.html", handleSettings);
-  server.on("/index.html", handleRoot);
-  server.begin();
 }
 
 void loop()
@@ -121,7 +119,6 @@ void loop()
   // saveMeasurement(10);
   // delay(3000);
 }
-
 
 void saveMeasurement(uint32_t value, uint32_t delta)
 {
@@ -196,4 +193,76 @@ void saving_routine()
       delay(1000);
     }
   }
+}
+
+bool system_initialize()
+{
+
+  Serial.begin(115200);
+  delay(10);
+
+  system_update_cpu_freq(SYS_CPU_160MHZ);
+
+  return true;
+}
+
+bool sd_initialize()
+{
+
+  Serial.print("Initializing SD card...");
+
+  if (!SD.begin(PIN_CS))
+  {
+    Serial.println("initialization failed!");
+    return false;
+  }
+  Serial.println("initialization done.");
+  return true;
+}
+
+bool interrupts_initialize()
+{
+
+  pinMode(PIN_PULSE_COUNTER, INPUT_PULLUP);
+  attachInterrupt(digitalPinToInterrupt(PIN_PULSE_COUNTER), handleInterrupt, FALLING);
+
+  pinMode(PIN_TURN_OFF, INPUT_PULLUP);
+  attachInterrupt(digitalPinToInterrupt(PIN_TURN_OFF), stopProgram, FALLING);
+
+  return true;
+}
+
+bool wifi_initialize()
+{
+
+  WiFi.begin(ssid, password);
+
+  initialization_time_start = millis();
+
+  while (WiFi.status() != WL_CONNECTED)
+  {
+    delay(500);
+    Serial.print(".");
+
+    initialization_time = millis();
+
+    if (initialization_time - initialization_time_start > MAX_WIFI_INTIALIZE_TIME)
+    {
+      Serial.println("Wifi initialization failed! Creating access point");
+      return false;
+    }
+  }
+
+  Serial.println("");
+  Serial.println("WiFi connected");
+  Serial.println("IP address: ");
+  Serial.println(WiFi.localIP());
+
+  return true;
+}
+
+bool access_point_initialize(){
+
+
+  return true;
 }

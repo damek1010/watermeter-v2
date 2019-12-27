@@ -9,6 +9,10 @@
 
 ESP8266WebServer server(80);
 
+bool ACCESS_POINT_SAVED_RESTART_NOW = false;
+
+String access_point_saved_ssid, access_point_saved_password;
+
 char buff[MAX_PART_SIZE + 1];
 int partSize = 0;
 
@@ -38,6 +42,29 @@ void sendFile(String filename, String mimetype = "text/html")
 void handleRoot()
 {
     sendFile("/web/index.html");
+}
+
+void handleAPSettings(){
+    sendFile("/web/apsettings.html");
+}
+
+void displaySave(){
+    sendFile("/web/apsave.html");
+}
+
+void handleSaveAPSettings(){
+
+    access_point_saved_ssid  = server.arg("ssid");
+    access_point_saved_password = server.arg("password");
+
+    Serial.println(access_point_saved_ssid + " " + access_point_saved_password);
+    
+
+   // server.sendHeader("Location", "/save");
+    displaySave();
+    delay(3000);
+    ACCESS_POINT_SAVED_RESTART_NOW = true;
+    delay(100);
 }
 
 void handleMeasurements()

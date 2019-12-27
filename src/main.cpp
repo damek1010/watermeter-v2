@@ -95,7 +95,7 @@ void save_network_informations(String ssid, String password);
 
 void get_network_informations();
 
-void (* resetFunc) (void) = 0;
+void (*resetFunc)(void) = 0;
 
 void setup()
 {
@@ -143,13 +143,15 @@ void loop()
 {
   server.handleClient();
 
-  if (ACCESS_POINT_WORING){
-      server.handleClient();
-      delay(100);
-      if (ACCESS_POINT_SAVED_RESTART_NOW){
-        save_network_informations(access_point_saved_ssid, access_point_saved_password);
-        resetFunc();
-      }
+  if (ACCESS_POINT_WORING)
+  {
+    server.handleClient();
+    delay(100);
+    if (ACCESS_POINT_SAVED_RESTART_NOW)
+    {
+      save_network_informations(access_point_saved_ssid, access_point_saved_password);
+      resetFunc();
+    }
   }
 
   time_millis = millis();
@@ -288,7 +290,6 @@ bool wifi_initialize()
   WiFi.mode(WIFI_STA);
   WiFi.disconnect();
   delay(200);
-  //Serial.println(network.ssid + " " + network.password);
 
   WiFi.begin(network.ssid, network.password);
 

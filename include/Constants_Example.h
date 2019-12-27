@@ -11,13 +11,17 @@
 
 //CLOCK
 #define PIN_DAT D4
-#define PIN_RST D2 
+#define PIN_RST D3
+
+//LCD
+
+#define PIN_SDA D2
+#define PIN_SCL D1
 
 //MEASURING_WATER
-#define PIN_PULSE_COUNTER D3
+#define PIN_PULSE_COUNTER D0
 
-//TURN_OFF_WATERMETER
-#define PIN_TURN_OFF D0
+
 
 
 #endif

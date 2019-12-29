@@ -6,20 +6,9 @@
 #include <Wire.h>
 #include <LiquidCrystal_I2C.h>
 
-//const char *ssid = "";
-//const char *password = "";
-
-const String NETWORKFILE = "network_informations.txt";
-
-const String ACCESS_POINT_NETWORK_NAME = "WatermeterAP";
-
-const String ACCESS_POINT_IP_STRING = "192.168.1.1/";
-
-IPAddress localIp(192, 168, 1, 1);
-IPAddress gateway(192, 168, 1, 1);
-IPAddress subnet(255, 255, 255, 0);
-
 String ssid, password;
+
+String measurement_period_as_string;
 
 bool ACCESS_POINT_WORING = false;
 
@@ -29,21 +18,16 @@ uint32_t lastMeasurement = 0;
 
 long last_time_of_save = millis();
 
-long SAVE_PERIOD = 10 * 1000;
-
 long time_millis;
 
 uint32_t pulseCounter = 0;
 
 static unsigned long last_interrupt_time = 0;
 
-const long MAX_WIFI_INTIALIZE_TIME = 20000;
 long initialization_time_start, initialization_time;
 
 bool sd_initialization_result;
 
-int lcdColumns = 16;
-int lcdRows = 2;
 byte error, address;
 
 LiquidCrystal_I2C lcd(0, 0, 0);
@@ -77,7 +61,7 @@ struct Wifi_Network
 
 Wifi_Network network;
 
-File csv, network_file;
+File csv, network_file, measurementperiod_file;
 
 void saving_routine();
 
@@ -105,6 +89,10 @@ void write_on_lcd(String first_line, String second_line = "");
 
 void error_loop();
 
+void save_measurement_period();
+
+void get_measurement_period();
+
 void setup()
 {
   system_initialize();
@@ -121,6 +109,8 @@ void setup()
 
   interrupts_initialize();
 
+  get_measurement_period();
+
   if (wifi_initialize())
   {
     timeClient.begin();
@@ -135,6 +125,8 @@ void setup()
     });
     server.onNotFound(handleNotFound);
     server.on("/settings.html", handleSettings);
+    server.on("/savenetworksettings.html", handleSaveNetworkSettings);
+    server.on("/savemeasurmentsettings.html", handleSaveMeasurementSettings);
     server.on("/index.html", handleRoot);
     server.begin();
   }
@@ -157,29 +149,34 @@ void loop()
 {
   server.handleClient();
 
-  if (ACCESS_POINT_WORING)
-  {
-    while (1)
-    {
-      server.handleClient();
-      delay(100);
-      if (ACCESS_POINT_SAVED_RESTART_NOW)
-      {
-        save_network_informations(access_point_saved_ssid, access_point_saved_password);
-        resetFunc();
-      }
-    }
-  }
-
   time_millis = millis();
+
+  delay(0);
 
   if (time_millis - last_time_of_save > SAVE_PERIOD)
   {
     saving_routine();
   }
+  delay(0);
 
-  // saveMeasurement(10);
-  // delay(3000);
+  if (NETWORK_CHANGED_RESTART_NOW)
+  {
+    save_network_informations(saved_ssid, saved_password);
+    resetFunc();
+  }
+
+  delay(0);
+
+  if (NETWORK_CHANGED_RESTART_NOW)
+  {
+    save_network_informations(saved_ssid, saved_password);
+    resetFunc();
+  }
+
+  if (MEASUREMENT_PERIOD_CHANGED)
+  {
+    save_measurement_period();
+  }
 }
 
 void saveMeasurement(uint32_t value, uint32_t delta)
@@ -325,7 +322,7 @@ bool wifi_initialize()
       return false;
     }
   }
-  write_on_lcd("NW Connection","successfull!");
+  write_on_lcd("NW Connection", "successfull!");
   delay(2000);
 
   //Serial.println("");
@@ -376,25 +373,25 @@ void save_network_informations(String ssid, String password)
 
 void get_network_informations()
 {
-  Serial.println(1);
-
   if (!SD.exists(NETWORKFILE))
   {
     network.ssid = "";
     return;
   }
-  Serial.println(2);
 
   network_file = SD.open(NETWORKFILE, FILE_READ);
-  Serial.println(3);
+
+  if (!network_file)
+  {
+    network.ssid = "";
+    return;
+  }
 
   ssid = network_file.readStringUntil('\n');
   password = network_file.readStringUntil('\n');
-  Serial.println(4);
 
   network.ssid = ssid;
   network.password = password;
-  Serial.println(6);
 }
 
 void wireSetup()
@@ -446,5 +443,46 @@ void error_loop()
   while (1)
   {
     delay(100);
+  }
+}
+
+void save_measurement_period()
+{
+  SD.remove(MEASUREMENT_PERIOD_FILE);
+  delay(0);
+  network_file = SD.open(MEASUREMENT_PERIOD_FILE, FILE_WRITE);
+  delay(0);
+
+  network_file.print(SAVE_PERIOD);
+  network_file.print("\n");
+
+  network_file.close();
+}
+
+void get_measurement_period()
+{
+
+  if (!SD.exists(MEASUREMENT_PERIOD_FILE))
+  {
+    return;
+  }
+
+  measurementperiod_file = SD.open(NETWORKFILE, FILE_READ);
+
+  if (!measurementperiod_file)
+  {
+    return;
+  }
+
+  measurement_period_as_string = network_file.readStringUntil('\n');
+
+  int period = measurement_period_as_string.toInt();
+  if (period < 1 || period > 60)
+  {
+    return;
+  }
+  else
+  {
+    SAVE_PERIOD = SAVE_PERIOD_MULTIPLIER * period;
   }
 }

@@ -1,6 +1,25 @@
 #ifndef CONSTANTS_H
 #define CONSTANTS_H
 
+//other constants
+const String NETWORKFILE = "network_informations.txt";
+const String ACCESS_POINT_NETWORK_NAME = "WatermeterAP";
+const String ACCESS_POINT_IP_STRING = "192.168.1.1/";
+
+const IPAddress localIp(192, 168, 1, 1);
+const IPAddress gateway(192, 168, 1, 1);
+const IPAddress subnet(255, 255, 255, 0);
+
+const long SAVE_PERIOD_MULTIPLIER = 1000*60;
+
+const long MAX_WIFI_INTIALIZE_TIME = 20000;
+
+const int lcdColumns = 16;
+const int lcdRows = 2;
+
+const int DEFAULT_SAVE_PERIOD = 10;
+
+
 #define PIN_CLK 14
 #define PIN_MISO 12
 #define PIN_MOSI 13

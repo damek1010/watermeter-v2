@@ -9,9 +9,12 @@
 
 ESP8266WebServer server(80);
 
-bool ACCESS_POINT_SAVED_RESTART_NOW = false;
+bool NETWORK_CHANGED_RESTART_NOW = false;
+bool MEASUREMENT_PERIOD_CHANGED = false;
 
-String access_point_saved_ssid, access_point_saved_password;
+int SAVE_PERIOD = DEFAULT_SAVE_PERIOD * SAVE_PERIOD_MULTIPLIER;
+
+String saved_ssid, saved_password;
 
 char buff[MAX_PART_SIZE + 1];
 int partSize = 0;
@@ -57,16 +60,42 @@ void displaySave()
 void handleSaveAPSettings()
 {
 
-    access_point_saved_ssid = server.arg("ssid");
-    access_point_saved_password = server.arg("password");
+    saved_ssid = server.arg("ssid");
+    saved_password = server.arg("password");
 
-    Serial.println(access_point_saved_ssid + " " + access_point_saved_password);
+    //Serial.println(access_point_saved_ssid + " " + access_point_saved_password);
 
     // server.sendHeader("Location", "/save");
     displaySave();
     delay(3000);
-    ACCESS_POINT_SAVED_RESTART_NOW = true;
+    NETWORK_CHANGED_RESTART_NOW = true;
     delay(1000);
+}
+
+void handleSaveNetworkSettings()
+{
+    saved_ssid = server.arg("ssid");
+    saved_password = server.arg("password");
+    displaySave();
+
+    NETWORK_CHANGED_RESTART_NOW = true;
+}
+
+void handleSaveMeasurementSettings()
+{
+    int period = server.arg("interval").toInt();
+
+    if (period < 1 || period > 60)
+    {
+        SAVE_PERIOD = DEFAULT_SAVE_PERIOD * SAVE_PERIOD_MULTIPLIER;
+    }
+    else
+    {
+        SAVE_PERIOD = SAVE_PERIOD_MULTIPLIER * period;
+    }
+    MEASUREMENT_PERIOD_CHANGED = true;
+    delay(100);
+    sendFile("/web/changesaved.html");
 }
 
 void handleMeasurements()

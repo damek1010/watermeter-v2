@@ -20,33 +20,49 @@
 </div>
 <main>
     <section>
-        <h2>Network settings</h2>
-        <hr/>
-        <div>
-            <label for="ssid">SSID (Network name)</label>
-            <input type="text" name="ssid" id="ssid" />
-        </div>
-        <div>
-            <label for="password">Password</label>
-            <input type="password" name="password" id="password" />
-        </div>
+        <form action="/savenetworksettings" method="post">
+            <br>
+            <h2>Network settings</h2>
+            <br>
+            SSID (network name):
+            <input type="text" name="ssid" value="">
+            <br><br>
+            Password:
+            <input type="password" name="password" value="">
+            <br><br>
+            <input type="submit" value="Save, restart and connect">
+        </form>
+
+<!--        <h2>Network settings</h2>-->
+<!--        <hr/>-->
+<!--        <div>-->
+<!--            <label for="ssid">SSID (Network name)</label>-->
+<!--            <input type="text" name="ssid" id="ssid" />-->
+<!--        </div>-->
+<!--        <div>-->
+<!--            <label for="password">Password</label>-->
+<!--            <input type="password" name="password" id="password" />-->
+<!--        </div>-->
     </section>
     <section>
-        <h2>Measurements settings</h2>
-        <hr/>
-        <div>
-            <label for="refreshTime">Measurements interval (in minutes)</label>
-            <input type="text" name="refreshTime" id="refreshTime" />
-        </div>
+        <form action="/savemeasurmentsettings" method="post">
+            <br>
+            <h2>Measurements settings</h2>
+            <br>
+            Measurements interval (in minutes, min 1, max 60):
+            <input type="text" name="interval" value="">
+            <br><br>
+            <input type="submit" value="Save">
+        </form>
+<!--        -->
+<!--        <h2>Measurements settings</h2>-->
+<!--        <hr/>-->
+<!--        <div>-->
+<!--            <label for="refreshTime">Measurements interval (in minutes)</label>-->
+<!--            <input type="text" name="refreshTime" id="refreshTime" />-->
+<!--        </div>-->
     </section>
-    <section>
-        <h2>Time settings</h2>
-        <hr/>
-        <div>
-            <label for="timezone">Timezone</label>
-            <input type="text" name="timezone" id="timezone" />
-        </div>
-    </section>
+
 </main>
 </body>
 </html>

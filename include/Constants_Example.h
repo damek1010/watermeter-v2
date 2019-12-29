@@ -14,7 +14,7 @@ const IPAddress subnet(255, 255, 255, 0);
 
 const long SAVE_PERIOD_MULTIPLIER = 1000*60;
 
-const long MAX_WIFI_INTIALIZE_TIME = 20000;
+const long MAX_WIFI_INTIALIZE_TIME = 30000;
 
 const int lcdColumns = 16;
 const int lcdRows = 2;

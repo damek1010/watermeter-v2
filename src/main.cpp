@@ -124,9 +124,11 @@ void setup()
       sendFile("/web/js/Chart.bundle.min.js", "application/javascript");
     });
     server.onNotFound(handleNotFound);
+        server.on("/settings", handleSettings);
+
     server.on("/settings.html", handleSettings);
-    server.on("/savenetworksettings.html", handleSaveNetworkSettings);
-    server.on("/savemeasurmentsettings.html", handleSaveMeasurementSettings);
+    server.on("/savenetworksettings", handleSaveNetworkSettings);
+    server.on("/savemeasurmentsettings", handleSaveMeasurementSettings);
     server.on("/index.html", handleRoot);
     server.begin();
   }
@@ -477,12 +479,12 @@ void get_measurement_period()
   measurement_period_as_string = network_file.readStringUntil('\n');
 
   int period = measurement_period_as_string.toInt();
-  if (period < 1 || period > 60)
+  if (period < 1*SAVE_PERIOD_MULTIPLIER || period > 60*SAVE_PERIOD_MULTIPLIER)
   {
     return;
   }
   else
   {
-    SAVE_PERIOD = SAVE_PERIOD_MULTIPLIER * period;
+    SAVE_PERIOD = period;
   }
 }

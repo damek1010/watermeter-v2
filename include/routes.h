@@ -117,17 +117,38 @@ void handleSettings()
     sendFile("/web/settings.html");
 }
 
-void handleJS(String path) {
+void handleJS(String path)
+{
     String fullpath = "/web" + path;
+    //Serial.println("HHAHAHAHAHAHAHAHAHAHAHAHAHA");
     sendFile(fullpath, "application/javascript");
+}
+
+void handleCss(String path){
+
+    String fullpath = "/web" + path;
+    //Serial.println("HHAHAHAHAHAHAHAHAHAHAHAHAHA");
+    sendFile(fullpath, "text/css");
 }
 
 void handleNotFound()
 {
     String path = server.uri();
+    //Serial.println(path);
     int index = path.indexOf("/js");
-    if (index > 0) {
+    //Serial.println("HHAHAHAHAHAHAHAHAHAHAHAHAHA");
+
+    if (index >= 0)
+    {
         handleJS(path);
+        return;
+    }
+
+    index = path.indexOf("/css");
+    if (index >= 0)
+    {
+        handleCss(path);
+        return;
     }
 
     server.send(404, "text/html", "404: Not found"); // Send HTTP status 404 (Not Found) when there's no handler for the URI in the request

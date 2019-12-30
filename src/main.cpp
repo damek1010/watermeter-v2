@@ -121,16 +121,13 @@ void setup()
     server.on("/style.css", []() {
       sendFile("/web/style.css", "text/css");
     });
-    server.on("/js/Chart.bundle.min.js", []() {
-      sendFile("/web/js/Chart.bundle.min.js", "application/javascript");
-    });
-    server.onNotFound(handleNotFound);
     server.on("/settings", handleSettings);
 
     server.on("/settings.html", handleSettings);
     server.on("/savenetworksettings", handleSaveNetworkSettings);
     server.on("/savemeasurmentsettings", handleSaveMeasurementSettings);
     server.on("/index.html", handleRoot);
+    server.onNotFound(handleNotFound);
     server.begin();
   }
   else

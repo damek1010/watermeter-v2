@@ -1,68 +1,59 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <title>Title</title>
+    <!-- Required meta tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 
-    <link rel="stylesheet" href="style.css" />
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="css/bootstrap.min.css" integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
+    <link rel="stylesheet" href="./style.css"/>
+
+    <title>Watermeter</title>
 </head>
 <body>
-<div id="nav">
-    <div id="brand">
-        <h2>WATERMETER</h2>
-    </div>
-    <nav>
-        <ul>
-            <li><a href="index.html">Data</a></li>
-            <li class="active"><a href="settings.html">Settings</a></li>
-        </ul>
-    </nav>
-</div>
+<nav class="navbar navbar-expand-lg navbar-light bg-light">
+    <a class="navbar-brand" href="index.html">WATERMETER</a>
+    <ul class="navbar-nav">
+        <li class="nav-item">
+            <a class="nav-link" href="index.html">Data</a>
+        </li>
+        <li class="nav-item active">
+            <a class="nav-link" href="settings.html">Settings</a>
+        </li>
+    </ul>
+</nav>
 <main>
-    <section>
-        <form action="/savenetworksettings" method="post">
-            <br>
+    <div class="container pt-4 text-center">
+        <h2>Settings</h2>
+        <section class="rounded shadow text-left p-4">
             <h2>Network settings</h2>
-            <br>
-            SSID (network name):
-            <input type="text" name="ssid" value="">
-            <br><br>
-            Password:
-            <input type="password" name="password" value="">
-            <br><br>
-            <input type="submit" value="Save, restart and connect">
-        </form>
-
-<!--        <h2>Network settings</h2>-->
-<!--        <hr/>-->
-<!--        <div>-->
-<!--            <label for="ssid">SSID (Network name)</label>-->
-<!--            <input type="text" name="ssid" id="ssid" />-->
-<!--        </div>-->
-<!--        <div>-->
-<!--            <label for="password">Password</label>-->
-<!--            <input type="password" name="password" id="password" />-->
-<!--        </div>-->
-    </section>
-    <section>
-        <form action="/savemeasurmentsettings" method="post">
-            <br>
+            <form action="/savenetworksettings" method="post">
+                <div class="form-group">
+                    <label for="name">SSID (network name)</label>
+                    <input type="text" class="form-control" id="name" name="ssid" placeholder="SSID">
+                </div>
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <input type="password" class="form-control" id="password" name="password" placeholder="Password" autocomplete="true">
+                </div>
+                <input type="submit" class="btn btn-success" value="Save, restart and connect">
+            </form>
+        </section>
+        <section class="rounded shadow text-left p-4 mt-4">
             <h2>Measurements settings</h2>
-            <br>
-            Measurements interval (in minutes, min 1, max 60):
-            <input type="text" name="interval" value="">
-            <br><br>
-            <input type="submit" value="Save">
-        </form>
-<!--        -->
-<!--        <h2>Measurements settings</h2>-->
-<!--        <hr/>-->
-<!--        <div>-->
-<!--            <label for="refreshTime">Measurements interval (in minutes)</label>-->
-<!--            <input type="text" name="refreshTime" id="refreshTime" />-->
-<!--        </div>-->
-    </section>
-
+            <form action="/savemeasurmentsettings" method="post">
+                <div class="form-group">
+                    <label for="interval">Measurements interval (in minutes, min 1, max 60)</label>
+                    <input type="text" class="form-control" id="interval" name="interval" placeholder="Interval">
+                </div>
+                <input type="submit" class="btn btn-success" value="Save">
+            </form>
+        </section>
+    </div>
 </main>
+
+<script src="js/jquery.js"></script>
+<script src="js/bootstrap.min.js"></script>
 </body>
 </html>

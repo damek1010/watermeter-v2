@@ -170,6 +170,18 @@ String get_whole_day_data(String day)
     return day + "," + result;
 }
 
+String make_hour_from_int(int hour)
+{
+    if (hour < 10)
+    {
+        return "0" + hour;
+    }
+    else
+    {
+        return String(hour);
+    }
+}
+
 String get_hourly_day_data(String day)
 {
     String result = "";
@@ -179,10 +191,81 @@ String get_hourly_day_data(String day)
     {
         for (int i = 0; i <= 23; ++i)
         {
+            result.concat(make_hour_from_int(i));
+            result.concat(",0\n");
         }
+        return result;
     }
 
-    return "";
+    int hour = 0;
+    uint32_t hour_delta = 0;
+    String hour_string = "00";
+    String line;
+    String hour_from_line;
+
+    while (file.available())
+    {
+        delay(0);
+        line = file.readStringUntil('\n');
+        Serial.println(line);
+        hour_from_line = line.substring(0, 2);
+        Serial.println(hour_from_line + " " + hour_string);
+        if (!hour_from_line.equals(hour_string))
+        {
+            Serial.println(make_hour_from_int(hour + 1));
+            if (!hour_from_line.equals(make_hour_from_int(hour + 1)))
+            {
+                while (!hour_string.equals(hour_from_line))
+                {
+                    delay(0);
+                    result.concat(hour_string);
+                    result.concat(",");
+                    result.concat(hour_delta);
+                    result.concat("\n");
+                    ++hour;
+                    hour_delta = 0;
+                    hour_string = make_hour_from_int(hour);
+                    Serial.println(hour_string);
+                }
+            }
+            else
+            {
+                delay(0);
+                result.concat(hour_string);
+                result.concat(",");
+                result.concat(hour_delta);
+                result.concat("\n");
+                hour_string = hour_from_line;
+                hour_delta = 0;
+                ++hour;
+            }
+        }
+        delay(0);
+        hour_delta += get_delta_from_record(line);
+    }
+
+    delay(0);
+    result.concat(hour_string);
+    result.concat(",");
+    result.concat(hour_delta);
+    result.concat("\n");
+    hour_string = hour_from_line;
+    hour_delta = 0;
+    ++hour;
+
+    while (hour < 24)
+    {
+        delay(0);
+        hour_string = make_hour_from_int(hour);
+
+        result.concat(hour_string);
+        result.concat(",");
+        result.concat(0);
+        result.concat("\n");
+        ++hour;
+    }
+
+    return result;
 }
 
 //month like 01, 02 ...

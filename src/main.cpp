@@ -154,14 +154,14 @@ void loop()
 
   time_millis = millis();
 
- // delay(0);
-  //Serial.println("asdasd");
-  //Serial.println(get_month_data_by_days("2019","12"));
-  //delay(10000);
+  delay(0);
+  Serial.println("asdasd");
+  Serial.println(get_hourly_day_data("1970-01-01"));
+  delay(10000);
 
   if (time_millis - last_time_of_save > SAVE_PERIOD)
   {
-    saving_routine();
+    //saving_routine();
   }
   delay(0);
 

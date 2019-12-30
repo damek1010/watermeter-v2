@@ -121,13 +121,16 @@ void setup()
     server.on("/style.css", []() {
       sendFile("/web/style.css", "text/css");
     });
+    server.on("/js/Chart.bundle.min.js", []() {
+      sendFile("/web/js/Chart.bundle.min.js", "application/javascript");
+    });
+    server.onNotFound(handleNotFound);
     server.on("/settings", handleSettings);
 
     server.on("/settings.html", handleSettings);
     server.on("/savenetworksettings", handleSaveNetworkSettings);
     server.on("/savemeasurmentsettings", handleSaveMeasurementSettings);
     server.on("/index.html", handleRoot);
-    server.onNotFound(handleNotFound);
     server.begin();
   }
   else
@@ -151,14 +154,9 @@ void loop()
 
   time_millis = millis();
 
-  delay(0);
-  Serial.println("asdasd");
-  Serial.println(get_hourly_day_data("1970-01-01"));
-  delay(10000);
-
   if (time_millis - last_time_of_save > SAVE_PERIOD)
   {
-    //saving_routine();
+    saving_routine();
   }
   delay(0);
 

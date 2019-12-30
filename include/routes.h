@@ -119,7 +119,7 @@ void handleSettings()
 
 void handleJS(String path) {
     String fullpath = "/web" + path;
-    sendFile(fullpath);
+    sendFile(fullpath, "application/javascript");
 }
 
 void handleNotFound()
@@ -185,7 +185,7 @@ String make_hour_from_int(int hour)
 {
     if (hour < 10)
     {
-        return "0" + hour;
+        return String("0" + String(hour));
     }
     else
     {
@@ -237,6 +237,7 @@ String get_hourly_day_data(String day)
                     hour_delta = 0;
                     hour_string = make_hour_from_int(hour);
                     Serial.println(hour_string);
+                    delay(250);
                 }
             }
             else

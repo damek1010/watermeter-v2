@@ -3,7 +3,9 @@
 
 //other constants
 const String NETWORKFILE = "network_informations.txt";
-const String MEASUREMENT_PERIOD_FILE = "measurement_interval.txt";
+const String MEASUREMENT_PERIOD_FILE = "measurement_interval.txt";\
+const String COUNTER_VALUE_FILE = "counter_value.txt";
+
 
 const String ACCESS_POINT_NETWORK_NAME = "WatermeterAP";
 const String ACCESS_POINT_IP_STRING = "192.168.1.1/";

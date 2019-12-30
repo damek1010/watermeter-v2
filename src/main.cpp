@@ -8,17 +8,17 @@
 
 String ssid, password;
 
-String measurement_period_as_string;
+String measurement_period_as_string, counter_value_as_string;
+
+char counter_value_buff[20];
 
 bool ACCESS_POINT_WORING = false;
 
-uint32_t utime = 0;
-
 uint32_t lastMeasurement = 0;
 
-long last_time_of_save = millis();
+unsigned long last_time_of_save = millis();
 
-long time_millis;
+unsigned long time_millis;
 
 uint32_t pulseCounter = 0;
 
@@ -32,16 +32,18 @@ byte error, address;
 
 LiquidCrystal_I2C lcd(0, 0, 0);
 
+unsigned long interrupt_time;
+
 void ICACHE_RAM_ATTR handleInterrupt()
 {
-  unsigned long interrupt_time = millis();
+  interrupt_time = millis();
   // If interrupts come faster than 100ms, assume it's a bounce and ignore
   if (interrupt_time - last_interrupt_time > 100)
   {
     ++pulseCounter;
     //Serial.println(pulseCounter);
 
-    Serial.println("writing to file");
+    //Serial.println("writing to file");
   }
   last_interrupt_time = interrupt_time;
 }
@@ -61,7 +63,7 @@ struct Wifi_Network
 
 Wifi_Network network;
 
-File csv, network_file, measurementperiod_file;
+File csv, network_file, measurementperiod_file, countervalue_file;
 
 void saving_routine();
 
@@ -76,22 +78,21 @@ bool wifi_initialize();
 bool access_point_initialize();
 
 void save_network_informations(String ssid, String password);
-
 void get_network_informations();
 
 void (*resetFunc)(void) = 0;
 
 void wireSetup();
-
 void lcdSetup();
-
 void write_on_lcd(String first_line, String second_line = "");
 
 void error_loop();
 
 void save_measurement_period();
-
 void get_measurement_period();
+
+void get_counter_value();
+void save_counter_value();
 
 void setup()
 {
@@ -124,7 +125,7 @@ void setup()
       sendFile("/web/js/Chart.bundle.min.js", "application/javascript");
     });
     server.onNotFound(handleNotFound);
-        server.on("/settings", handleSettings);
+    server.on("/settings", handleSettings);
 
     server.on("/settings.html", handleSettings);
     server.on("/savenetworksettings", handleSaveNetworkSettings);
@@ -153,7 +154,10 @@ void loop()
 
   time_millis = millis();
 
-  delay(0);
+ // delay(0);
+  //Serial.println("asdasd");
+  //Serial.println(get_month_data_by_days("2019","12"));
+  //delay(10000);
 
   if (time_millis - last_time_of_save > SAVE_PERIOD)
   {
@@ -212,13 +216,14 @@ void saveMeasurement(uint32_t value, uint32_t delta)
   Serial.print(measurement.time);
   Serial.print("\n}");
 
-  String filename = String(getCurrentDate());
+  String filename = "/data/" + String(getCurrentDate());
   filename.concat(".csv");
   csv = SD.open(filename, FILE_WRITE);
 
-  String buf = String(measurement.value);
+  //CHANGED!
+  String buf = String(measurement.time);
   buf.concat(",");
-  buf.concat(measurement.time);
+  buf.concat(measurement.value);
   buf.concat(",");
   buf.concat(measurement.delta);
 
@@ -238,9 +243,6 @@ void saving_routine()
   // }
 
   saveMeasurement(pulseCounter, pulseCounter - lastMeasurement);
-
-  utime += 3;
-  Serial.println("4");
 
   lastMeasurement = pulseCounter;
 }
@@ -479,7 +481,7 @@ void get_measurement_period()
   measurement_period_as_string = network_file.readStringUntil('\n');
 
   int period = measurement_period_as_string.toInt();
-  if (period < 1*SAVE_PERIOD_MULTIPLIER || period > 60*SAVE_PERIOD_MULTIPLIER)
+  if (period < 1 * SAVE_PERIOD_MULTIPLIER || period > 60 * SAVE_PERIOD_MULTIPLIER)
   {
     return;
   }
@@ -487,4 +489,44 @@ void get_measurement_period()
   {
     SAVE_PERIOD = period;
   }
+}
+
+void get_counter_value()
+{
+  if (!SD.exists(COUNTER_VALUE_FILE))
+  {
+    return;
+  }
+
+  countervalue_file = SD.open(COUNTER_VALUE_FILE, FILE_READ);
+
+  if (!countervalue_file)
+  {
+    return;
+  }
+
+  counter_value_as_string = network_file.readStringUntil('\n');
+
+  counter_value_as_string.toCharArray(counter_value_buff, 20);
+
+  pulseCounter = strtoul(counter_value_buff, NULL, 10);
+
+  if (pulseCounter == ULONG_MAX)
+  {
+    pulseCounter = 0;
+  }
+}
+
+void save_counter_value()
+{
+
+  SD.remove(COUNTER_VALUE_FILE);
+  delay(0);
+  network_file = SD.open(COUNTER_VALUE_FILE, FILE_WRITE);
+  delay(0);
+
+  network_file.print(pulseCounter);
+  network_file.print("\n");
+
+  network_file.close();
 }

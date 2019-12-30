@@ -125,9 +125,9 @@ void handleJS(String path) {
 void handleNotFound()
 {
     String path = server.uri();
-    int index = path.indexOf('/js');
+    int index = path.indexOf("/js");
     if (index > 0) {
-
+        handleJS(path);
     }
 
     server.send(404, "text/html", "404: Not found"); // Send HTTP status 404 (Not Found) when there's no handler for the URI in the request

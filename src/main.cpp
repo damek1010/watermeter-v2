@@ -8,7 +8,7 @@
 
 String ssid, password;
 
-String measurement_period_as_string, counter_value_as_string;
+String measurement_period_as_string, counter_value_as_string, date_refresh;
 
 char counter_value_buff[20];
 
@@ -145,6 +145,7 @@ void setup()
     server.on("/measurements/monthdaily", handleMonthDaily);
 
     server.begin();
+
   }
   else
   {
@@ -531,6 +532,7 @@ void get_counter_value()
   {
     pulseCounter = 0;
   }
+  lastMeasurement = pulseCounter;
 }
 
 void save_counter_value()

@@ -203,7 +203,7 @@ String get_whole_day_data(String day)
     return String(day + "," + String(result));
 }
 
-uint32_t get_whole_day_data_uint32(String day = getCurrentDate())
+uint32_t get_whole_day_data_uint32(String day)
 {
     String filename = "/data/" + day;
     filename.concat(".csv");
@@ -381,16 +381,18 @@ uint32_t get_whole_month_uint32(String year, String month)
 
 void handleDay()
 {
+    String day;
     if (server.args() > 0)
     {
-        String day = server.arg(0);
-        delay(0);
-        server.send(200, "text/plain", String(get_whole_day_data_uint32(day)));
+        day = server.arg(0);
     }
     else
     {
-        server.send(200, "text/plain", String(get_whole_day_data_uint32()));
+        day = getCurrentDate();
     }
+
+    delay(0);
+    server.send(200, "text/plain", String(get_whole_day_data_uint32(day)));
 }
 
 void handleMonth()

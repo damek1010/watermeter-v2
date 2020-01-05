@@ -108,6 +108,8 @@ void setup()
     error_loop();
   }
 
+  get_counter_value();
+
   interrupts_initialize();
 
   get_measurement_period();
@@ -243,6 +245,8 @@ void saving_routine()
   // }
 
   saveMeasurement(pulseCounter, pulseCounter - lastMeasurement);
+
+  save_counter_value();
 
   lastMeasurement = pulseCounter;
 }

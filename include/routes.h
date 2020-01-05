@@ -250,7 +250,7 @@ String get_hourly_day_data(String day)
     {
         for (int i = 0; i <= 23; ++i)
         {
-                    delay(0);
+            delay(0);
 
             result.concat(make_hour_from_int(i));
             result.concat(",0\n");
@@ -270,10 +270,10 @@ String get_hourly_day_data(String day)
         line = file.readStringUntil('\n');
         //Serial.println(line);
         hour_from_line = line.substring(0, 2);
-       // Serial.println(hour_from_line + " " + hour_string);
+        // Serial.println(hour_from_line + " " + hour_string);
         if (!hour_from_line.equals(hour_string))
         {
-           // Serial.println(make_hour_from_int(hour + 1));
+            // Serial.println(make_hour_from_int(hour + 1));
             if (!hour_from_line.equals(make_hour_from_int(hour + 1)))
             {
                 while (!hour_string.equals(hour_from_line))
@@ -290,7 +290,7 @@ String get_hourly_day_data(String day)
                     hour_delta = 0;
                     hour_string = make_hour_from_int(hour);
                     //Serial.println(hour_string);
-                   // delay(250);
+                    // delay(250);
                 }
             }
             else
@@ -393,6 +393,32 @@ uint32_t get_whole_month_uint32(String year, String month)
     return result;
 }
 
+String get_year_data_by_months(String year)
+{
+    int month = 1;
+    String monthString;
+    uint32_t month_value = 0;
+    String result = "";
+
+    delay(0);
+
+    for (; month <= 12; ++month)
+    {
+        delay(0);
+        monthString = month < 10 ? String("0" + String(month)) : String(month);
+
+        result.concat(year);
+        result.concat("-");
+        result.concat(monthString);
+        result.concat(",");
+        delay(0);
+        month_value = get_whole_month_uint32(year, monthString);
+        result.concat(month_value);
+        result.concat("\n");
+    }
+    return result;
+}
+
 uint32_t get_whole_year_uint32(String year)
 {
     int month = 1;
@@ -453,6 +479,12 @@ void handleMonthDaily()
     String month = server.arg(1);
     delay(0);
     server.send(200, "text/plain", get_month_data_by_days(year, month));
+}
+
+void handleYearMonthly()
+{
+    String year = server.arg(0);
+    server.send(200, "text/plain", get_year_data_by_months(year));
 }
 
 #endif

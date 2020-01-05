@@ -470,13 +470,13 @@ void save_measurement_period()
 {
   SD.remove(MEASUREMENT_PERIOD_FILE);
   delay(0);
-  network_file = SD.open(MEASUREMENT_PERIOD_FILE, FILE_WRITE);
+  measurementperiod_file = SD.open(MEASUREMENT_PERIOD_FILE, FILE_WRITE);
   delay(0);
 
-  network_file.print(SAVE_PERIOD);
-  network_file.print("\n");
+  measurementperiod_file.print(SAVE_PERIOD);
+  measurementperiod_file.print("\n");
 
-  network_file.close();
+  measurementperiod_file.close();
 }
 
 void get_measurement_period()
@@ -487,14 +487,14 @@ void get_measurement_period()
     return;
   }
 
-  measurementperiod_file = SD.open(NETWORKFILE, FILE_READ);
+  measurementperiod_file = SD.open(MEASUREMENT_PERIOD_FILE, FILE_READ);
 
   if (!measurementperiod_file)
   {
     return;
   }
 
-  measurement_period_as_string = network_file.readStringUntil('\n');
+  measurement_period_as_string = measurementperiod_file.readStringUntil('\n');
 
   int period = measurement_period_as_string.toInt();
   if (period < 1 * SAVE_PERIOD_MULTIPLIER || period > 60 * SAVE_PERIOD_MULTIPLIER)
@@ -521,7 +521,7 @@ void get_counter_value()
     return;
   }
 
-  counter_value_as_string = network_file.readStringUntil('\n');
+  counter_value_as_string = countervalue_file.readStringUntil('\n');
 
   counter_value_as_string.toCharArray(counter_value_buff, 20);
 
@@ -538,11 +538,11 @@ void save_counter_value()
 
   SD.remove(COUNTER_VALUE_FILE);
   delay(0);
-  network_file = SD.open(COUNTER_VALUE_FILE, FILE_WRITE);
+  countervalue_file = SD.open(COUNTER_VALUE_FILE, FILE_WRITE);
   delay(0);
 
-  network_file.print(pulseCounter);
-  network_file.print("\n");
+  countervalue_file.print(pulseCounter);
+  countervalue_file.print("\n");
 
-  network_file.close();
+  countervalue_file.close();
 }

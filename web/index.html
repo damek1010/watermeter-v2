@@ -5,111 +5,128 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 
-    <link rel="stylesheet" href="./style.css" />
+    <link rel="stylesheet" href="./style.css"/>
 
     <title>Watermeter</title>
 </head>
 
 <body>
-    <nav class="nav">
-        <a class="active" href="index.html">Data</a>
-        <a href="settings.html">Settings</a>
-    </nav>
-    <main>
-        <div class="container">
-            <h2>Consumption</h2>
-            <div id="consumption">
-                <div>
-                    <section id="today">
-                        <h3>Today</h3>
-                        <p><span id="day">0</span> l</p>
-                    </section>
-                    <section class="rounded shadow py-3">
-                        <h3>Whole</h3>
-                        <p><span id="whole">0</span> l</p>
-                    </section>
-                </div>
-                <div>
-                    <section class="rounded shadow py-3">
-                        <h3>Period</h3>
-                        <form>
-                            <select id="range_select" class="form-control w-50 m-auto">
-                                <option value="month" selected>Month</option>
-                                <option value="year">Year</option>
-                            </select>
-                            <input type="month" id="month_input" />
-                            <button id="range_set_button">Set</button>
-                        </form>
-                        <div>
-                            <table>
-                                <tbody>
-                                    <tr>
-                                        <td>Whole</td>
-                                        <td><span id="range_whole">0</span> l</td>
-                                    </tr>
-                                <tbody>
-                                    <tr>
-                                        <td>Average per day</td>
-                                        <td><span id="range_average">0</span> l</td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                        </div>
-                    </section>
-                </div>
+<nav class="nav">
+    <a class="active" href="index.html">Data</a>
+    <a href="settings.html">Settings</a>
+</nav>
+<main>
+    <div class="container">
+        <h2>Consumption</h2>
+        <div id="consumption">
+            <div>
+                <section id="today">
+                    <h3>Today</h3>
+                    <p><span id="day">0</span> l</p>
+                </section>
+                <section class="rounded shadow py-3">
+                    <h3>Whole</h3>
+                    <p><span id="whole">0</span> l</p>
+                </section>
+            </div>
+            <div>
+                <section class="rounded shadow py-3">
+                    <h3>Period</h3>
+                    <form>
+                        <select id="range_select" class="form-control w-50 m-auto">
+                            <option value="month" selected>Month</option>
+                            <option value="year">Year</option>
+                        </select>
+                        <input type="month" id="month_input"/>
+                        <button id="range_set_button">Set</button>
+                    </form>
+                    <div>
+                        <div class="loading">Loading...</div>
+                        <table>
+                            <tbody>
+                            <tr>
+                                <td>Whole</td>
+                                <td><span id="range_whole">0</span> l</td>
+                            </tr>
+                            <tbody>
+                            <tr>
+                                <td>Average per day</td>
+                                <td><span id="range_average">0</span> l</td>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
             </div>
         </div>
-    </main>
-    <script type="text/javascript" src="js/config.js"></script>
-    <script>
-        setInterval(fetchResults, 1000);
+</main>
+<script type="text/javascript" src="js/config.js"></script>
+<script>
+    setInterval(fetchResults, 1000);
+    initPeriodInput();
+    fetchPeriod();
 
-        function fetchResults() {
-            fetch(ENDPOINTS.PER_DAY)
-                .then((response) => response.text())
-                .then((text) => {
-                    let dayElement = document.querySelector("#day");
-                    dayElement.innerHTML = text;
-                });
-            fetch(ENDPOINTS.WHOLE)
-                .then((response) => response.text())
-                .then((text) => {
-                    let wholeElement = document.querySelector("#whole");
-                    wholeElement.innerHTML = text;
-                });
+    function initPeriodInput() {
+        let month_input = document.querySelector("#month_input");
+        let now = new Date();
+        month_input.value = now.getFullYear() + "-" + (now.getMonth() + 1 < 10 ? "0" + (now.getMonth() + 1) : (now.getMonth() + 1));
+    }
+
+    function fetchResults() {
+        fetch(ENDPOINTS.PER_DAY)
+            .then((response) => response.text())
+            .then((text) => {
+                let dayElement = document.querySelector("#day");
+                dayElement.innerHTML = text;
+            });
+        fetch(ENDPOINTS.WHOLE)
+            .then((response) => response.text())
+            .then((text) => {
+                let wholeElement = document.querySelector("#whole");
+                wholeElement.innerHTML = text;
+            });
+    }
+
+    function fetchPeriod() {
+        let range_select = document.querySelector("#range_select");
+        let month_input = document.querySelector("#month_input");
+        let month = Number(month_input.value.split("-")[1]);
+        let year = Number(month_input.value.split("-")[0]);
+
+        let days = 0;
+        let endpoint = "";
+        if (range_select.value === "month") {
+            days = (month === 2) ? ((year % 4 === 0) ? 29 : 28) : ((month === 8) ? 31 : ((month % 2 === 0) ? 30 : 31));
+            endpoint = ENDPOINTS.RANGE;
+            endpoint += "?year=" + year;
+            endpoint += "&month=" + month;
+        } else {
+            days = (year % 4 === 0) ? 366 : 365;
+            endpoint = ENDPOINTS.RANGE_YEAR;
+            endpoint += "?year=" + year;
         }
 
-        document.querySelector("#range_set_button").addEventListener('click', function (e) {
-            e.preventDefault();
+        let rangeLoadingElement = document.querySelector(".loading");
+        rangeLoadingElement.style.display = "block";
 
-            let range_select = document.querySelector("#range_select");
-            let month_input = document.querySelector("#month_input");
-            let month = Number(month_input.value.split("-")[1]);
-            let year = Number(month_input.value.split("-")[0]);
+        fetch(endpoint)
+            .then((response) => response.text())
+            .then((text) => {
+                let rangeWholeElement = document.querySelector("#range_whole");
+                let rangeAverageElement = document.querySelector("#range_average");
+                rangeWholeElement.innerHTML = text;
+                rangeAverageElement.innerHTML = String(Number(text) / days);
+                rangeLoadingElement.style.display = "none";
+            });
+    }
 
-            let days = 0;
-            let endpoint = "";
-            if (range_select.value === "month") {
-                days = (month === 2) ? ((year % 4 === 0) ? 29 : 28) : ((month === 8) ? 31 : ((month % 2 === 0) ? 30 : 31));
-                endpoint = ENDPOINTS.RANGE;
-            } else {
-                days = (year % 4 === 0) ? 366 : 365;
-                endpoint = ENDPOINTS.RANGE_YEAR;
-            }
+    document.querySelector("#range_set_button").addEventListener('click', function (e) {
+        e.preventDefault();
 
-            let arguments = days > 40 ? String("year=" + String(year)) : String("year=" + String(year) + "&month=" + String(month));
+        fetchPeriod();
+    })
 
-            fetch(endpoint + "?" + arguments)
-                .then((response) => response.text())
-                .then((text) => {
-                    let rangeWholeElement = document.querySelector("#range_whole");
-                    let rangeAverageElement = document.querySelector("#range_average");
-                    rangeWholeElement.innerHTML = text;
-                    rangeAverageElement.innerHTML = String(Number(text) / days);
-                });
-        })
-
-    </script>
+</script>
 </body>
 
 </html>

@@ -250,6 +250,8 @@ String get_hourly_day_data(String day)
     {
         for (int i = 0; i <= 23; ++i)
         {
+                    delay(0);
+
             result.concat(make_hour_from_int(i));
             result.concat(",0\n");
         }
@@ -266,12 +268,12 @@ String get_hourly_day_data(String day)
     {
         delay(0);
         line = file.readStringUntil('\n');
-        Serial.println(line);
+        //Serial.println(line);
         hour_from_line = line.substring(0, 2);
-        Serial.println(hour_from_line + " " + hour_string);
+       // Serial.println(hour_from_line + " " + hour_string);
         if (!hour_from_line.equals(hour_string))
         {
-            Serial.println(make_hour_from_int(hour + 1));
+           // Serial.println(make_hour_from_int(hour + 1));
             if (!hour_from_line.equals(make_hour_from_int(hour + 1)))
             {
                 while (!hour_string.equals(hour_from_line))
@@ -279,13 +281,16 @@ String get_hourly_day_data(String day)
                     delay(0);
                     result.concat(hour_string);
                     result.concat(",");
+
+                    delay(0);
+
                     result.concat(hour_delta);
                     result.concat("\n");
                     ++hour;
                     hour_delta = 0;
                     hour_string = make_hour_from_int(hour);
-                    Serial.println(hour_string);
-                    delay(250);
+                    //Serial.println(hour_string);
+                   // delay(250);
                 }
             }
             else
@@ -293,6 +298,9 @@ String get_hourly_day_data(String day)
                 delay(0);
                 result.concat(hour_string);
                 result.concat(",");
+
+                delay(0);
+
                 result.concat(hour_delta);
                 result.concat("\n");
                 hour_string = hour_from_line;
@@ -307,6 +315,9 @@ String get_hourly_day_data(String day)
     delay(0);
     result.concat(hour_string);
     result.concat(",");
+
+    delay(0);
+
     result.concat(hour_delta);
     result.concat("\n");
     hour_string = hour_from_line;
@@ -320,6 +331,9 @@ String get_hourly_day_data(String day)
 
         result.concat(hour_string);
         result.concat(",");
+
+        delay(0);
+
         result.concat(0);
         result.concat("\n");
         ++hour;
@@ -379,6 +393,23 @@ uint32_t get_whole_month_uint32(String year, String month)
     return result;
 }
 
+uint32_t get_whole_year_uint32(String year)
+{
+    int month = 1;
+    String monthString;
+    uint32_t result = 0;
+
+    delay(0);
+
+    for (; month <= 12; ++month)
+    {
+        delay(0);
+        monthString = month < 10 ? String("0" + String(month)) : String(month);
+        result += get_whole_month_uint32(year, monthString);
+    }
+    return result;
+}
+
 void handleDay()
 {
     String day;
@@ -401,6 +432,12 @@ void handleMonth()
     String month = server.arg(1);
     delay(0);
     server.send(200, "text/plain", String(get_whole_month_uint32(year, month)));
+}
+
+void handleYear()
+{
+    String year = server.arg(0);
+    server.send(200, "text/plain", String(get_whole_year_uint32(year)));
 }
 
 void handleDayHourly()

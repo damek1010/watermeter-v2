@@ -140,12 +140,12 @@ void setup()
 
     server.on("/measurements/day", handleDay);
     server.on("/measurements/month", handleMonth);
+    server.on("/measurements/year", handleYear);
 
     server.on("/measurements/dayhourly", handleDayHourly);
     server.on("/measurements/monthdaily", handleMonthDaily);
 
     server.begin();
-
   }
   else
   {

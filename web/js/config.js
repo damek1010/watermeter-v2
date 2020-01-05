@@ -1,6 +1,6 @@
 var ENDPOINTS = {
-    PER_DAY: "resday.txt",
-    WHOLE: "whole.txt",
-    RANGE: "range.txt",
-    RANGE_YEAR: "rangeYear.txt"
+    PER_DAY: "/measurements/day",
+    WHOLE: "/measurements/whole",
+    RANGE: "/measurements/month",
+    RANGE_YEAR: "/measurements/year"
 };

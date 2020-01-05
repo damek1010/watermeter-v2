@@ -220,11 +220,12 @@ void saveMeasurement(uint32_t value, uint32_t delta)
   csv = SD.open(filename, FILE_WRITE);
 
   //CHANGED!
+  //now time,delta,value
   String buf = String(measurement.time);
   buf.concat(",");
-  buf.concat(measurement.value);
-  buf.concat(",");
   buf.concat(measurement.delta);
+  buf.concat(",");
+  buf.concat(measurement.value);
 
   csv.println(buf);
   csv.close();

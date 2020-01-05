@@ -157,6 +157,10 @@ void loop()
   if (time_millis - last_time_of_save > SAVE_PERIOD)
   {
     saving_routine();
+    delay(0);
+    if (WiFi.status() == WL_CONNECTED){
+        write_on_lcd("NW " + network.ssid.substring(0, 13), WiFi.localIP().toString() + "/");
+    }
   }
   delay(0);
 

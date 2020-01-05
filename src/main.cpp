@@ -133,6 +133,17 @@ void setup()
     server.on("/savenetworksettings", handleSaveNetworkSettings);
     server.on("/savemeasurmentsettings", handleSaveMeasurementSettings);
     server.on("/index.html", handleRoot);
+
+    server.on("/measurements/whole", [] {
+      server.send(200, "text/plain", String(pulseCounter));
+    });
+
+    server.on("/measurements/day", handleDay);
+    server.on("/measurements/month", handleMonth);
+
+    server.on("/measurements/dayhourly", handleDayHourly);
+    server.on("/measurements/monthdaily", handleMonthDaily);
+
     server.begin();
   }
   else
@@ -160,8 +171,9 @@ void loop()
   {
     saving_routine();
     delay(0);
-    if (WiFi.status() == WL_CONNECTED){
-        write_on_lcd("NW " + network.ssid.substring(0, 13), WiFi.localIP().toString() + "/");
+    if (WiFi.status() == WL_CONNECTED)
+    {
+      write_on_lcd("NW " + network.ssid.substring(0, 13), WiFi.localIP().toString() + "/");
     }
   }
   delay(0);

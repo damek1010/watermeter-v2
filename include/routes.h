@@ -124,7 +124,8 @@ void handleJS(String path)
     sendFile(fullpath, "application/javascript");
 }
 
-void handleCss(String path){
+void handleCss(String path)
+{
 
     String fullpath = "/web" + path;
     //Serial.println("HHAHAHAHAHAHAHAHAHAHAHAHAHA");
@@ -199,7 +200,33 @@ String get_whole_day_data(String day)
         }
     }
     delay(0);
-    return day + "," + result;
+    return String(day + "," + String(result));
+}
+
+uint32_t get_whole_day_data_uint32(String day)
+{
+    String filename = "/data/" + day;
+    filename.concat(".csv");
+    delay(0);
+    File day_file = SD.open(filename);
+    delay(0);
+    if (!day_file)
+    {
+        return 0;
+    }
+    uint32_t result = 0;
+    while (day_file.available())
+    {
+        delay(0);
+        filename = day_file.readStringUntil('\n');
+        delay(0);
+        if (filename.length() > 9)
+        {
+            result += get_delta_from_record(filename);
+        }
+    }
+    delay(0);
+    return result;
 }
 
 String make_hour_from_int(int hour)
@@ -326,6 +353,60 @@ String get_month_data_by_days(String year, String month)
         delay(0);
     }
     return result;
+}
+
+uint32_t get_whole_month_uint32(String year, String month)
+{
+    String beginning_date = year + "-" + month + "-";
+    String file;
+    uint32_t result = 0;
+    delay(0);
+    for (int i = 1; i <= 31; ++i)
+    {
+        delay(0);
+        if (i < 10)
+        {
+            file = beginning_date + "0" + i;
+        }
+        else
+        {
+            file = beginning_date + i;
+        }
+        delay(0);
+        result += get_whole_day_data_uint32(file);
+        delay(0);
+    }
+    return result;
+}
+
+void handleDay()
+{
+    String day = server.arg(0);
+    delay(0);
+    server.send(200, "text/plain", String(get_whole_day_data_uint32(day)));
+}
+
+void handleMonth()
+{
+    String year = server.arg(0);
+    String month = server.arg(1);
+    delay(0);
+    server.send(200, "text/plain", String(get_whole_month_uint32(year, month)));
+}
+
+void handleDayHourly()
+{
+    String day = server.arg(0);
+    delay(0);
+    server.send(200, "text/plain", get_hourly_day_data(day));
+}
+
+void handleMonthDaily()
+{
+    String year = server.arg(0);
+    String month = server.arg(1);
+    delay(0);
+    server.send(200, "text/plain", get_month_data_by_days(year, month));
 }
 
 #endif

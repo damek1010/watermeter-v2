@@ -139,15 +139,14 @@ void setup()
     server.on("/index.html", handleRoot);
 
     server.on("/measurements/whole", [] {
-      server.send(200, "text/plain", String(pulseCounter));
+      server.send(200, "text/plain", String(pulseCounter/PULSES_PER_LITER));
     });
 
     server.on("/measurements/day", handleDay);
     server.on("/measurements/month", handleMonth);
     server.on("/measurements/year", handleYear);
 
-    server.on("/measurements/dayhourly", handleDayHourly);
-    server.on("/measurements/monthdaily", handleMonthDaily);
+    server.on("/measurements/details", handleDetails);
 
     server.begin();
   }

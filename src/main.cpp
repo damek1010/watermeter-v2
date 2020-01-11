@@ -63,7 +63,7 @@ struct Wifi_Network
 
 Wifi_Network network;
 
-File csv, network_file, measurementperiod_file, countervalue_file;
+File csv, network_file, measurementperiod_file, countervalue_file, pulses_per_liter_f;
 
 void saving_routine();
 
@@ -94,6 +94,9 @@ void get_measurement_period();
 void get_counter_value();
 void save_counter_value();
 
+void get_pulses_per_liter();
+void save_pulses_per_liter();
+
 void setup()
 {
   system_initialize();
@@ -107,6 +110,8 @@ void setup()
     write_on_lcd("SD Card Error!", "Check and reset");
     error_loop();
   }
+
+  get_pulses_per_liter();
 
   get_counter_value();
 
@@ -132,6 +137,7 @@ void setup()
     server.on("/settings.html", handleSettings);
     server.on("/savenetworksettings", handleSaveNetworkSettings);
     server.on("/savemeasurmentsettings", handleSaveMeasurementSettings);
+    server.on("/saveinputsettings", handleSaveInputSettings);
     server.on("/index.html", handleRoot);
 
     server.on("/measurements/whole", [] {
@@ -185,17 +191,25 @@ void loop()
     resetFunc();
   }
 
-  delay(0);
-
-  if (NETWORK_CHANGED_RESTART_NOW)
+  if (AP_NETWORK_CHANGED_RESTART_NOW)
   {
     save_network_informations(saved_ssid, saved_password);
+    save_pulses_per_liter();
     resetFunc();
   }
+
+  delay(0);
 
   if (MEASUREMENT_PERIOD_CHANGED)
   {
     save_measurement_period();
+  }
+
+  delay(0);
+
+  if (PULSES_PER_LITER_CHANGED)
+  {
+    save_pulses_per_liter();
   }
 }
 
@@ -214,10 +228,15 @@ void saveMeasurement(uint32_t value, uint32_t delta)
   * Tworzenie pomiaru
   * 
   */
+
+  uint32_t valid_delta = delta / PULSES_PER_LITER;
+
+  uint32_t valid_value = value / PULSES_PER_LITER;
+
   Measurement measurement;
   measurement.time = timeClient.getFormattedTime();
-  measurement.value = value;
-  measurement.delta = delta;
+  measurement.value = valid_value;
+  measurement.delta = valid_delta;
 
   /*
   *
@@ -244,6 +263,11 @@ void saveMeasurement(uint32_t value, uint32_t delta)
 
   csv.println(buf);
   csv.close();
+
+  if (valid_delta != 0)
+  {
+    lastMeasurement = pulseCounter;
+  }
 }
 
 void saving_routine()
@@ -260,8 +284,6 @@ void saving_routine()
   saveMeasurement(pulseCounter, pulseCounter - lastMeasurement);
 
   save_counter_value();
-
-  lastMeasurement = pulseCounter;
 }
 
 bool system_initialize()
@@ -532,6 +554,9 @@ void get_counter_value()
   {
     pulseCounter = 0;
   }
+
+  pulseCounter *= PULSES_PER_LITER;
+
   lastMeasurement = pulseCounter;
 }
 
@@ -543,8 +568,51 @@ void save_counter_value()
   countervalue_file = SD.open(COUNTER_VALUE_FILE, FILE_WRITE);
   delay(0);
 
-  countervalue_file.print(pulseCounter);
+  countervalue_file.print(pulseCounter / PULSES_PER_LITER);
   countervalue_file.print("\n");
 
   countervalue_file.close();
+}
+
+void get_pulses_per_liter()
+{
+
+  if (!SD.exists(PULSES_PER_LITER_FILE))
+  {
+    PULSES_PER_LITER = 1;
+    return;
+  }
+
+  pulses_per_liter_f = SD.open(PULSES_PER_LITER_FILE, FILE_READ);
+
+  if (!pulses_per_liter_f)
+  {
+    PULSES_PER_LITER = 1;
+    return;
+  }
+
+  counter_value_as_string = pulses_per_liter_f.readStringUntil('\n');
+
+  counter_value_as_string.toCharArray(counter_value_buff, 20);
+
+  PULSES_PER_LITER = strtoul(counter_value_buff, NULL, 10);
+
+  if (PULSES_PER_LITER == 0)
+  {
+    PULSES_PER_LITER = 1;
+  }
+}
+
+void save_pulses_per_liter()
+{
+
+  SD.remove(PULSES_PER_LITER_FILE);
+  delay(0);
+  pulses_per_liter_f = SD.open(PULSES_PER_LITER_FILE, FILE_WRITE);
+  delay(0);
+
+  pulses_per_liter_f.print(PULSES_PER_LITER);
+  pulses_per_liter_f.print("\n");
+
+  pulses_per_liter_f.close();
 }

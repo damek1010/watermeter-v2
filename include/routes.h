@@ -11,10 +11,14 @@ ESP8266WebServer server(80);
 
 bool NETWORK_CHANGED_RESTART_NOW = false;
 bool MEASUREMENT_PERIOD_CHANGED = false;
+bool PULSES_PER_LITER_CHANGED = false;
+bool AP_NETWORK_CHANGED_RESTART_NOW = false;
 
 unsigned long SAVE_PERIOD = DEFAULT_SAVE_PERIOD * SAVE_PERIOD_MULTIPLIER;
 
-String saved_ssid, saved_password;
+int PULSES_PER_LITER = 1;
+
+String saved_ssid, saved_password, saved_pulses;
 
 char buff[MAX_PART_SIZE + 1];
 int partSize = 0;
@@ -65,12 +69,20 @@ void handleSaveAPSettings()
     saved_ssid = server.arg("ssid");
     saved_password = server.arg("password");
 
-    //Serial.println(access_point_saved_ssid + " " + access_point_saved_password);
+    saved_pulses = server.arg("pulses");
 
-    // server.sendHeader("Location", "/save");
+    saved_pulses.toCharArray(number_buff, 20);
+
+    PULSES_PER_LITER = strtoul(number_buff, NULL, 10);
+
+    if (PULSES_PER_LITER == 0)
+    {
+        PULSES_PER_LITER = 1;
+    }
+
     displaySave();
     delay(3000);
-    NETWORK_CHANGED_RESTART_NOW = true;
+    AP_NETWORK_CHANGED_RESTART_NOW = true;
     delay(1000);
 }
 
@@ -96,6 +108,24 @@ void handleSaveMeasurementSettings()
         SAVE_PERIOD = SAVE_PERIOD_MULTIPLIER * period;
     }
     MEASUREMENT_PERIOD_CHANGED = true;
+    delay(100);
+    sendFile("/web/changesaved.html");
+}
+
+void handleSaveInputSettings()
+{
+
+    int pulses = server.arg("pulses").toInt();
+
+    if (pulses == 0)
+    {
+        PULSES_PER_LITER = 1;
+    }
+    else
+    {
+        PULSES_PER_LITER = pulses;
+    }
+    PULSES_PER_LITER_CHANGED = true;
     delay(100);
     sendFile("/web/changesaved.html");
 }

@@ -5,6 +5,8 @@
 const String NETWORKFILE = "network_informations.txt";
 const String MEASUREMENT_PERIOD_FILE = "measurement_interval.txt";\
 const String COUNTER_VALUE_FILE = "counter_value.txt";
+const String PULSES_PER_LITER_FILE = "pulses_per_liter.txt";
+
 
 
 const String ACCESS_POINT_NETWORK_NAME = "WatermeterAP";

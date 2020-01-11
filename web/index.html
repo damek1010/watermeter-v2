@@ -59,12 +59,220 @@
                 </section>
             </div>
         </div>
+        <section id="chart-section">
+            <form>
+                <select id="chart_range_select" class="form-control w-50 m-auto">
+                    <option value="day" selected>Day</option>
+                    <option value="month">Month</option>
+                    <option value="year">Year</option>
+                </select>
+                <input type="date" id="date_input"/>
+                <button id="chart_set_value">Set</button>
+            </form>
+            <canvas id="chart"></canvas>
+        </section>
+    </div>
+
 </main>
 <script type="text/javascript" src="js/config.js"></script>
 <script>
-    setInterval(fetchResults, 1000);
+    // setInterval(fetchResults, REFRESH_RATE);
+    fetchResults();
     initPeriodInput();
     fetchPeriod();
+
+    let canvas = document.querySelector("#chart");
+    let context = canvas.getContext('2d');
+
+    data = [{
+        time: "00",
+        value: 0
+    }, {
+        time: "01",
+        value: 0
+    }, {
+        time: "02",
+        value: 0
+    }, {
+        time: "03",
+        value: 0
+    }, {
+        time: "04",
+        value: 0
+    }, {
+        time: "05",
+        value: 0
+    }, {
+        time: "06",
+        value: 5
+    }, {
+        time: "07",
+        value: 7
+    }, {
+        time: "08",
+        value: 10
+    }, {
+        time: "09",
+        value: 18
+    }, {
+        time: "10",
+        value: 18
+    }, {
+        time: "11",
+        value: 0
+    }, {
+        time: "12",
+        value: 0
+    }, {
+        time: "13",
+        value: 0
+    }, {
+        time: "14",
+        value: 0
+    }, {
+        time: "15",
+        value: 0
+    }, {
+        time: "16",
+        value: 0
+    }, {
+        time: "17",
+        value: 5
+    }, {
+        time: "18",
+        value: 7
+    }, {
+        time: "19",
+        value: 10
+    }, {
+        time: "20",
+        value: 18
+    }, {
+        time: "21",
+        value: 30
+    }, {
+        time: "22",
+        value: 18
+    }, {
+        time: "23",
+        value: 30
+    }];
+
+
+    class PeriodChart {
+        constructor(canvas, data) {
+            this.setTitle("Chart");
+
+            this.canvas = canvas;
+            this.context = canvas.getContext('2d');
+
+            this.setData(data);
+        }
+
+        setData(data) {
+            this.data = data;
+
+            this.dpi = window.devicePixelRatio;
+            this.fixDPI();
+
+            this.paddingX = 100;
+            this.paddingY = 70;
+            this.titleBarHeight = 170;
+            this.columnWidth = (canvas.width - 2 * this.paddingX) / (this.data.length - 1);
+
+            let max = 0;
+            for (let i = 0; i < this.data.length; i++) {
+                if (this.data[i].value > max) {
+                    max = this.data[i].value;
+                }
+            }
+
+            this.diffY = max * 1.1;
+
+        }
+
+        setTitle(title) {
+            this.title = title;
+        }
+
+        drawGuideLines() {
+            context.strokeStyle = "#e6e6e6";
+
+            context.font = "30px Arial";
+            for (let x = this.paddingX, i = 0; x <= canvas.width - this.paddingX; x += this.columnWidth, i++) {
+                context.beginPath();
+                context.moveTo(x, canvas.height - this.paddingY);
+                context.lineTo(x, this.titleBarHeight);
+                context.stroke();
+
+                let label = this.data[i].time;
+                context.fillText(label, x - context.measureText(label).width / 2, canvas.height - 10);
+            }
+
+            //Vertical guide lines and labels
+            context.font = "30px Arial";
+            let rowHeight = (canvas.height - this.titleBarHeight - this.paddingY) / 6;
+            for (let y = this.paddingY, i = 0; y <= canvas.height - this.titleBarHeight; y += rowHeight, i++) {
+                context.fillStyle = "black";
+                let label = String(i * this.diffY / 6);
+                context.fillText(label, this.paddingX - context.measureText(label).width * 3 / 2, canvas.height - y);
+
+                context.beginPath();
+                context.lineTo(this.paddingX, canvas.height - y);
+                context.lineTo(canvas.width - this.paddingX, canvas.height - y);
+                context.stroke();
+            }
+        }
+
+        drawPoints() {
+            for (let i = 0; i < this.data.length; i++) {
+                let y = this.paddingY + this.data[i].value * (canvas.height - this.paddingY - this.titleBarHeight) / this.diffY;
+                let x = this.paddingX + i * this.columnWidth;
+                context.fillRect(x - 5, canvas.height - y - 5, 10, 10);
+
+                let label = this.data[i].time;
+                context.fillText(label, x - context.measureText(label).width / 2, canvas.height - 10);
+            }
+        }
+
+        render() {
+            this.drawGuideLines();
+            this.drawPoints();
+
+            context.fillStyle = "black";
+            context.font = "60px Arial";
+            context.fillText(this.title, this.canvas.width / 2, 75);
+        }
+
+        reset() {
+            this.context.clearRect(0, 0, this.canvas.width, this.canvas.height);
+        }
+
+        fixDPI() {
+            let style_height = +getComputedStyle(canvas).getPropertyValue("height").slice(0, -2);
+            let style_width = +getComputedStyle(canvas).getPropertyValue("width").slice(0, -2);
+            console.log(style_height);
+            canvas.setAttribute('height', style_height * this.dpi);
+            canvas.setAttribute('width', style_width * this.dpi);
+        }
+
+    }
+
+    class DailyChart extends PeriodChart {
+        constructor(canvas, data) {
+            data = data.map(measurement => {
+                measurement.time += ":00";
+                return measurement;
+            });
+
+            super(canvas, data);
+
+            this.setTitle("Daily");
+        }
+    }
+
+    let pc = new DailyChart(canvas, data);
+    pc.render();
 
     function initPeriodInput() {
         let month_input = document.querySelector("#month_input");
@@ -124,6 +332,40 @@
         e.preventDefault();
 
         fetchPeriod();
+    });
+
+    document.querySelector("#chart_set_value").addEventListener('click', function (e) {
+        e.preventDefault();
+
+        let range_selected = document.querySelector("#chart_range_select");
+        let date = document.querySelector("#date_input");
+        let year = date.value.split("-")[0];
+        let month = date.value.split("-")[1];
+        let day = date.value.split("-")[2];
+
+        console.log(date.value);
+        let endpoint = ENDPOINTS.CHART_DETAILS + "?year=" + year;
+
+        switch (range_selected.value) {
+            case "month": {
+                endpoint += "&month=" + month;
+                break;
+            }
+            case "day": {
+                endpoint += "&month=" + month;
+                endpoint += "&day=" + day;
+                break;
+            }
+        }
+
+        fetch(endpoint)
+            .then((response) => response.json())
+            .then((json) => {
+                console.log(json);
+                pc.reset();
+                pc.setData(json);
+                pc.render();
+            });
     })
 
 </script>

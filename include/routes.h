@@ -186,6 +186,11 @@ void handleNotFound()
 uint32_t get_delta_from_record(String line)
 {
     //HH:MM:SS,
+
+    if (line.length() < 9){
+        return 0;
+    }
+
     unsigned start = 9, end = 0;
     for (unsigned int i = start; i < line.length(); ++i)
     {
@@ -269,7 +274,8 @@ String make_hour_from_int(int hour)
 
 String get_hourly_day_data(String day)
 {
-    String result = "[";
+    String result = "";
+    result.concat("[");
 
     File file = SD.open("/data/" + day + ".csv");
     if (!file)
@@ -277,14 +283,15 @@ String get_hourly_day_data(String day)
         for (int i = 0; i <= 23; ++i)
         {
             delay(0);
-            result.concat("{time:\"");
+            result.concat("{\"time\":\"");
             result.concat(make_hour_from_int(i));
-            result.concat("\",value:0}");
+            result.concat("\",\"value\":0}");
             if (i < 23)
             {
                 result.concat(",");
             }
         }
+        result.concat("]");
         return result;
     }
 
@@ -309,9 +316,9 @@ String get_hourly_day_data(String day)
                 while (!hour_string.equals(hour_from_line))
                 {
                     delay(0);
-                    result.concat("{time:\"");
+                    result.concat("{\"time\":\"");
                     result.concat(hour_string);
-                    result.concat("\",value:");
+                    result.concat("\",\"value\":");
 
                     delay(0);
 
@@ -332,11 +339,11 @@ String get_hourly_day_data(String day)
             else
             {
                 delay(0);
-                result.concat("{time:\"");
+                result.concat("{\"time\":\"");
 
                 result.concat(hour_string);
 
-                result.concat("\",value:");
+                result.concat("\",\"value\":");
 
                 delay(0);
 
@@ -357,10 +364,10 @@ String get_hourly_day_data(String day)
     }
 
     delay(0);
-    result.concat("{time:\"");
+    result.concat("{\"time\":\"");
 
     result.concat(hour_string);
-    result.concat("\",value:");
+    result.concat("\",\"value\":");
 
     delay(0);
 
@@ -379,10 +386,10 @@ String get_hourly_day_data(String day)
         delay(0);
         hour_string = make_hour_from_int(hour);
 
-        result.concat("{time:\"");
+        result.concat("{\"time\":\"");
 
         result.concat(hour_string);
-        result.concat("\",value:");
+        result.concat("\",\"value\":");
 
         delay(0);
 
@@ -418,9 +425,9 @@ String get_month_data_by_days(String year, String month)
         {
             file = beginning_date + i;
         }
-        result.concat("{time:\"");
+        result.concat("{\"time\":\"");
         result.concat(i);
-        result.concat("\",value:");
+        result.concat("\",\"value\":");
         delay(0);
         result.concat(get_whole_day_data_uint32(file));
         delay(0);
@@ -473,9 +480,9 @@ String get_year_data_by_months(String year)
         delay(0);
         monthString = month < 10 ? String("0" + String(month)) : String(month);
 
-        result.concat("{time:\"");
+        result.concat("{\"time\":\"");
         result.concat(monthString);
-        result.concat("\",value:");
+        result.concat("\",\"value\":");
         delay(0);
         month_value = get_whole_month_uint32(year, monthString);
         result.concat(month_value);

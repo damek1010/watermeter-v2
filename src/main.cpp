@@ -41,9 +41,7 @@ void ICACHE_RAM_ATTR handleInterrupt()
   if (interrupt_time - last_interrupt_time > 100)
   {
     ++pulseCounter;
-    //Serial.println(pulseCounter);
-
-    //Serial.println("writing to file");
+    Serial.println(pulseCounter);
   }
   last_interrupt_time = interrupt_time;
 }
@@ -141,15 +139,14 @@ void setup()
     server.on("/index.html", handleRoot);
 
     server.on("/measurements/whole", [] {
-      server.send(200, "text/plain", String(pulseCounter));
+      server.send(200, "text/plain", String(pulseCounter/PULSES_PER_LITER));
     });
 
     server.on("/measurements/day", handleDay);
     server.on("/measurements/month", handleMonth);
     server.on("/measurements/year", handleYear);
 
-    server.on("/measurements/dayhourly", handleDayHourly);
-    server.on("/measurements/monthdaily", handleMonthDaily);
+    server.on("/measurements/details", handleDetails);
 
     server.begin();
   }
@@ -229,9 +226,15 @@ void saveMeasurement(uint32_t value, uint32_t delta)
   * 
   */
 
+  Serial.println(delta);
+  Serial.println(PULSES_PER_LITER);
+  Serial.println(lastMeasurement);
+
   uint32_t valid_delta = delta / PULSES_PER_LITER;
 
   uint32_t valid_value = value / PULSES_PER_LITER;
+
+  Serial.println(valid_delta);
 
   Measurement measurement;
   measurement.time = timeClient.getFormattedTime();
@@ -243,11 +246,11 @@ void saveMeasurement(uint32_t value, uint32_t delta)
   * Zapisywanie pomiaru
   * 
   */
-  Serial.print("Saving measurement: {\n\tvalue:");
-  Serial.print(measurement.value);
-  Serial.print(",\n\ttime: ");
-  Serial.print(measurement.time);
-  Serial.print("\n}");
+  // Serial.print("Saving measurement: {\n\tvalue:");
+  //Serial.print(measurement.value);
+  //Serial.print(",\n\ttime: ");
+  //Serial.print(measurement.time);
+  //Serial.print("\n}");
 
   String filename = "/data/" + String(getCurrentDate());
   filename.concat(".csv");
@@ -266,7 +269,7 @@ void saveMeasurement(uint32_t value, uint32_t delta)
 
   if (valid_delta != 0)
   {
-    lastMeasurement = pulseCounter;
+    lastMeasurement+=valid_delta*PULSES_PER_LITER;
   }
 }
 
@@ -492,7 +495,7 @@ void error_loop()
 void save_measurement_period()
 {
   SD.remove(MEASUREMENT_PERIOD_FILE);
-  delay(0);
+  delay(10);
   measurementperiod_file = SD.open(MEASUREMENT_PERIOD_FILE, FILE_WRITE);
   delay(0);
 

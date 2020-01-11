@@ -150,7 +150,6 @@ void handleSettings()
 void handleJS(String path)
 {
     String fullpath = "/web" + path;
-    //Serial.println("HHAHAHAHAHAHAHAHAHAHAHAHAHA");
     sendFile(fullpath, "application/javascript");
 }
 
@@ -158,16 +157,13 @@ void handleCss(String path)
 {
 
     String fullpath = "/web" + path;
-    //Serial.println("HHAHAHAHAHAHAHAHAHAHAHAHAHA");
     sendFile(fullpath, "text/css");
 }
 
 void handleNotFound()
 {
     String path = server.uri();
-    //Serial.println(path);
     int index = path.indexOf("/js");
-    //Serial.println("HHAHAHAHAHAHAHAHAHAHAHAHAHA");
 
     if (index >= 0)
     {
@@ -273,7 +269,7 @@ String make_hour_from_int(int hour)
 
 String get_hourly_day_data(String day)
 {
-    String result = "";
+    String result = "[";
 
     File file = SD.open("/data/" + day + ".csv");
     if (!file)
@@ -281,9 +277,13 @@ String get_hourly_day_data(String day)
         for (int i = 0; i <= 23; ++i)
         {
             delay(0);
-
+            result.concat("{time:\"");
             result.concat(make_hour_from_int(i));
-            result.concat(",0\n");
+            result.concat("\",value:0}");
+            if (i < 23)
+            {
+                result.concat(",");
+            }
         }
         return result;
     }
@@ -309,13 +309,19 @@ String get_hourly_day_data(String day)
                 while (!hour_string.equals(hour_from_line))
                 {
                     delay(0);
+                    result.concat("{time:\"");
                     result.concat(hour_string);
-                    result.concat(",");
+                    result.concat("\",value:");
 
                     delay(0);
 
                     result.concat(hour_delta);
-                    result.concat("\n");
+                    result.concat("}");
+
+                    if (!hour_string.equals("23"))
+                    {
+                        result.concat(",");
+                    }
                     ++hour;
                     hour_delta = 0;
                     hour_string = make_hour_from_int(hour);
@@ -326,13 +332,21 @@ String get_hourly_day_data(String day)
             else
             {
                 delay(0);
+                result.concat("{time:\"");
+
                 result.concat(hour_string);
-                result.concat(",");
+
+                result.concat("\",value:");
 
                 delay(0);
 
                 result.concat(hour_delta);
-                result.concat("\n");
+                result.concat("}");
+
+                if (!hour_string.equals("23"))
+                {
+                    result.concat(",");
+                }
                 hour_string = hour_from_line;
                 hour_delta = 0;
                 ++hour;
@@ -343,13 +357,19 @@ String get_hourly_day_data(String day)
     }
 
     delay(0);
+    result.concat("{time:\"");
+
     result.concat(hour_string);
-    result.concat(",");
+    result.concat("\",value:");
 
     delay(0);
 
     result.concat(hour_delta);
-    result.concat("\n");
+    result.concat("}");
+    if (hour < 23)
+    {
+        result.concat(",");
+    }
     hour_string = hour_from_line;
     hour_delta = 0;
     ++hour;
@@ -359,15 +379,23 @@ String get_hourly_day_data(String day)
         delay(0);
         hour_string = make_hour_from_int(hour);
 
+        result.concat("{time:\"");
+
         result.concat(hour_string);
-        result.concat(",");
+        result.concat("\",value:");
 
         delay(0);
 
-        result.concat(0);
-        result.concat("\n");
+        result.concat("0}");
+
+        if (hour < 23)
+        {
+            result.concat(",");
+        }
         ++hour;
     }
+
+    result.concat("]");
 
     return result;
 }
@@ -377,7 +405,7 @@ String get_month_data_by_days(String year, String month)
 {
     String beginning_date = year + "-" + month + "-";
     String file;
-    String result = "";
+    String result = "[";
     delay(0);
     for (int i = 1; i <= 31; ++i)
     {
@@ -390,12 +418,20 @@ String get_month_data_by_days(String year, String month)
         {
             file = beginning_date + i;
         }
+        result.concat("{time:\"");
+        result.concat(i);
+        result.concat("\",value:");
         delay(0);
-        result.concat(get_whole_day_data(file));
+        result.concat(get_whole_day_data_uint32(file));
         delay(0);
-        result.concat("\n");
+        result.concat("}");
+        if (i < 31)
+        {
+            result.concat(",");
+        }
         delay(0);
     }
+    result.concat("]");
     return result;
 }
 
@@ -428,7 +464,7 @@ String get_year_data_by_months(String year)
     int month = 1;
     String monthString;
     uint32_t month_value = 0;
-    String result = "";
+    String result = "[";
 
     delay(0);
 
@@ -437,15 +473,18 @@ String get_year_data_by_months(String year)
         delay(0);
         monthString = month < 10 ? String("0" + String(month)) : String(month);
 
-        result.concat(year);
-        result.concat("-");
+        result.concat("{time:\"");
         result.concat(monthString);
-        result.concat(",");
+        result.concat("\",value:");
         delay(0);
         month_value = get_whole_month_uint32(year, monthString);
         result.concat(month_value);
-        result.concat("\n");
+        result.concat("}");
+        if ( month < 12 ){
+            result.concat(",");
+        }
     }
+    result.concat("]");
     return result;
 }
 
@@ -498,9 +537,20 @@ void handleYear()
 
 void handleDayHourly()
 {
-    String day = server.arg(0);
+    String year = server.arg(0);
+    String month = server.arg(1);
+    String day = server.arg(2);
     delay(0);
-    server.send(200, "text/plain", get_hourly_day_data(day));
+
+    String day_request = "";
+    day_request.concat(year);
+    day_request.concat("-");
+    delay(0);
+    day_request.concat(month);
+    day_request.concat("-");
+    day_request.concat(day);
+    delay(0);
+    server.send(200, "text/plain", get_hourly_day_data(day_request));
 }
 
 void handleMonthDaily()
@@ -515,6 +565,24 @@ void handleYearMonthly()
 {
     String year = server.arg(0);
     server.send(200, "text/plain", get_year_data_by_months(year));
+}
+
+void handleDetails()
+{
+    switch (server.args())
+    {
+    case 1:
+        handleYearMonthly();
+        break;
+    case 2:
+        handleMonthDaily();
+        break;
+    case 3:
+        handleDayHourly();
+        break;
+    default:
+        break;
+    }
 }
 
 #endif

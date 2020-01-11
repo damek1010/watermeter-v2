@@ -298,7 +298,7 @@
     function fetchPeriod() {
         let range_select = document.querySelector("#range_select");
         let month_input = document.querySelector("#month_input");
-        let month = Number(month_input.value.split("-")[1]);
+        let month = String(month_input.value.split("-")[1]);
         let year = Number(month_input.value.split("-")[0]);
 
         let days = 0;

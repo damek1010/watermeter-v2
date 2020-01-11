@@ -15,7 +15,7 @@ String getCurrentDate()
   struct tm ts = *localtime(&rawtime);
   char buf[80];
   strftime(buf, sizeof(buf), "%Y-%m-%d", &ts);
-  Serial.println(buf);
+  //Serial.println(buf);
 
   return buf;
 }

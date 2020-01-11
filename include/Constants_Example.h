@@ -3,7 +3,7 @@
 
 //other constants
 const String NETWORKFILE = "network_informations.txt";
-const String MEASUREMENT_PERIOD_FILE = "measurement_interval.txt";\
+const String MEASUREMENT_PERIOD_FILE = "measurement_interval.txt";
 const String COUNTER_VALUE_FILE = "counter_value.txt";
 const String PULSES_PER_LITER_FILE = "pulses_per_liter.txt";
 
@@ -41,10 +41,10 @@ const int DEFAULT_SAVE_PERIOD = 10;
 //LCD
 
 #define PIN_SDA D2
-#define PIN_SCL D1
+#define PIN_SCL D0
 
 //MEASURING_WATER
-#define PIN_PULSE_COUNTER D0
+#define PIN_PULSE_COUNTER D1
 
 
 

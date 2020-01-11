@@ -150,7 +150,6 @@ void handleSettings()
 void handleJS(String path)
 {
     String fullpath = "/web" + path;
-    //Serial.println("HHAHAHAHAHAHAHAHAHAHAHAHAHA");
     sendFile(fullpath, "application/javascript");
 }
 
@@ -158,16 +157,13 @@ void handleCss(String path)
 {
 
     String fullpath = "/web" + path;
-    //Serial.println("HHAHAHAHAHAHAHAHAHAHAHAHAHA");
     sendFile(fullpath, "text/css");
 }
 
 void handleNotFound()
 {
     String path = server.uri();
-    //Serial.println(path);
     int index = path.indexOf("/js");
-    //Serial.println("HHAHAHAHAHAHAHAHAHAHAHAHAHA");
 
     if (index >= 0)
     {

@@ -7,16 +7,15 @@ const String MEASUREMENT_PERIOD_FILE = "measurement_interval.txt";
 const String COUNTER_VALUE_FILE = "counter_value.txt";
 const String PULSES_PER_LITER_FILE = "pulses_per_liter.txt";
 
-
-
 const String ACCESS_POINT_NETWORK_NAME = "WatermeterAP";
+
 const String ACCESS_POINT_IP_STRING = "192.168.1.1/";
 
 const IPAddress localIp(192, 168, 1, 1);
 const IPAddress gateway(192, 168, 1, 1);
 const IPAddress subnet(255, 255, 255, 0);
 
-const long SAVE_PERIOD_MULTIPLIER = 1000*60;
+const unsigned long SAVE_PERIOD_MULTIPLIER = 60000;
 
 const long MAX_WIFI_INTIALIZE_TIME = 30000;
 
@@ -26,25 +25,26 @@ const int lcdRows = 2;
 const int DEFAULT_SAVE_PERIOD = 10;
 
 
-#define PIN_CLK 14
-#define PIN_MISO 12
-#define PIN_MOSI 13
-#define PIN_CS 15
+//SD_CARD
+#define PIN_MISO D6
+#define PIN_MOSI D7
+#define PIN_CS D8
 
 #define MAX_PART_SIZE 512
 
+#define PIN_CLK D5
 
 //CLOCK
 #define PIN_DAT D4
-#define PIN_RST D3
+#define PIN_RST D0 
 
 //LCD
 
 #define PIN_SDA D2
-#define PIN_SCL D0
+#define PIN_SCL D1
 
 //MEASURING_WATER
-#define PIN_PULSE_COUNTER D1
+#define PIN_PULSE_COUNTER D3
 
 
 

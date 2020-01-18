@@ -166,7 +166,17 @@
             this.canvas = canvas;
             this.context = canvas.getContext('2d');
 
+            let fontBase = 1440;
+            let fontSize = 20;
+            this.fontRatio = fontSize / fontBase;
+
             this.setData(data);
+        }
+
+        getFontSize(element) {
+            var size = canvas.width * this.fontRatio;   // get font size based on current width
+            if (element != null && element.toLowerCase() === "title") size *= 2;
+            return (size|0) + 'px Arial'; // set font
         }
 
         setData(data) {
@@ -198,7 +208,7 @@
         drawGuideLines() {
             context.strokeStyle = "#e6e6e6";
 
-            context.font = "30px Arial";
+            context.font = this.getFontSize();
             for (let x = this.paddingX, i = 0; x <= canvas.width - this.paddingX; x += this.columnWidth, i++) {
                 context.beginPath();
                 context.moveTo(x, canvas.height - this.paddingY);
@@ -210,7 +220,7 @@
             }
 
             //Vertical guide lines and labels
-            context.font = "30px Arial";
+            context.font = this.getFontSize();
             let rowHeight = (canvas.height - this.titleBarHeight - this.paddingY) / 6;
             for (let y = this.paddingY, i = 0; y <= canvas.height - this.titleBarHeight; y += rowHeight, i++) {
                 context.fillStyle = "black";
@@ -230,8 +240,8 @@
                 let x = this.paddingX + i * this.columnWidth;
                 context.fillRect(x - 5, canvas.height - y - 5, 10, 10);
 
-                let label = this.data[i].time;
-                context.fillText(label, x - context.measureText(label).width / 2, canvas.height - 10);
+                // let label = this.data[i].time;
+                // context.fillText(label, x - context.measureText(label).width / 2, canvas.height - 10);
             }
         }
 
@@ -240,7 +250,7 @@
             this.drawPoints();
 
             context.fillStyle = "black";
-            context.font = "60px Arial";
+            context.font = this.getFontSize("TITLE");
             context.fillText(this.title, this.canvas.width / 2, 75);
         }
 
@@ -343,17 +353,19 @@
         let month = date.value.split("-")[1];
         let day = date.value.split("-")[2];
 
-        console.log(date.value);
         let endpoint = ENDPOINTS.CHART_DETAILS + "?year=" + year;
+        pc.setTitle("Year");
 
         switch (range_selected.value) {
             case "month": {
                 endpoint += "&month=" + month;
+                pc.setTitle("Monthly");
                 break;
             }
             case "day": {
                 endpoint += "&month=" + month;
                 endpoint += "&day=" + day;
+                pc.setTitle("Daily");
                 break;
             }
         }

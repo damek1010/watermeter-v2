@@ -5,6 +5,7 @@
 #include "TimeService.h"
 #include <Wire.h>
 #include <LiquidCrystal_I2C.h>
+#include <RtcDS3231.h>
 
 String ssid, password;
 
@@ -120,6 +121,10 @@ void setup()
   if (wifi_initialize())
   {
     timeClient.begin();
+    timeClient.update();
+
+    initRtc();
+    Serial.println(getCurrentTime());
 
     server.on("/", handleRoot);
     server.on("/measurements", handleMeasurements);
@@ -219,7 +224,8 @@ void saveMeasurement(uint32_t value, uint32_t delta)
   * 
   */
 
-  timeClient.update();
+  // timeClient.update();
+
 
   /*
   *
@@ -238,7 +244,7 @@ void saveMeasurement(uint32_t value, uint32_t delta)
   Serial.println(valid_delta);
 
   Measurement measurement;
-  measurement.time = timeClient.getFormattedTime();
+  measurement.time = getCurrentTime();
   measurement.value = valid_value;
   measurement.delta = valid_delta;
 

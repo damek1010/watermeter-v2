@@ -1,32 +1,26 @@
 #include "Arduino.h"
 #include "ESP8266WiFi.h"
 #include "Constants.h"
-#include "routes.h"
 #include "TimeService.h"
 #include <Wire.h>
 #include <LiquidCrystal_I2C.h>
 #include <RtcDS3231.h>
 #include "LcdLogger.h"
+#include "Measurement.h"
+#include "Config.h"
+#include "Network.h"
 
 String ssid, password;
 
 String measurement_period_as_string, counter_value_as_string, date_refresh;
 
-char counter_value_buff[20];
-
-bool ACCESS_POINT_WORING = false;
-
-uint32_t lastMeasurement = 0;
-
 unsigned long last_time_of_save = millis();
 
 unsigned long time_millis;
 
-uint32_t pulseCounter = 0;
-
 static unsigned long last_interrupt_time = 0;
 
-long initialization_time_start, initialization_time;
+// long initialization_time_start, initialization_time;
 
 bool sd_initialization_result;
 
@@ -41,42 +35,32 @@ void ICACHE_RAM_ATTR handleInterrupt()
   if (interrupt_time - last_interrupt_time > 100)
   {
     ++pulseCounter;
-    Serial.println(pulseCounter);
   }
   last_interrupt_time = interrupt_time;
 }
 
-struct Measurement
-{
-  uint32_t value;
-  uint32_t delta;
-  String time;
-};
+// struct Wifi_Network
+// {
+//   String ssid;
+//   String password;
+// };
 
-struct Wifi_Network
-{
-  String ssid;
-  String password;
-};
-
-Wifi_Network network;
+// Wifi_Network network;
 
 File csv, network_file, measurementperiod_file, countervalue_file, pulses_per_liter_f;
 
-void saving_routine();
+void savingRoutine();
 
-bool system_initialize();
+bool sdInitialize();
 
-bool sd_initialize();
+bool interruptsInitialize();
 
-bool interrupts_initialize();
+// bool wifi_initialize();
 
-bool wifi_initialize();
+// bool access_point_initialize();
 
-bool access_point_initialize();
-
-void save_network_informations(String ssid, String password);
-void get_network_informations();
+// void save_network_informations(String ssid, String password);
+// void get_network_informations();
 
 void (*resetFunc)(void) = 0;
 
@@ -85,87 +69,33 @@ void wireSetup();
 void error_loop();
 
 void save_measurement_period();
-void get_measurement_period();
+// void get_measurement_period();
 
-void get_counter_value();
+// void getCounterValue();
 void save_counter_value();
 
-void get_pulses_per_liter();
+// void get_pulses_per_liter();
 void save_pulses_per_liter();
 
 void setup()
 {
-  system_initialize();
-
   wireSetup();
 
   lcdSetup();
 
-  if (!sd_initialize())
+  if (!sdInitialize())
   {
     lcdWrite("SD Card Error!", "Check and reset");
     error_loop();
   }
 
-  get_pulses_per_liter();
+  loadConfig();
 
-  get_counter_value();
+  loadCounterValue();
 
-  interrupts_initialize();
+  interruptsInitialize();
 
-  get_measurement_period();
-
-  if (wifi_initialize())
-  {
-    timeClient.begin();
-    timeClient.update();
-
-    initRtc();
-    Serial.println(getCurrentTime());
-
-    server.on("/", handleRoot);
-    server.on("/measurements", handleMeasurements);
-    server.on("/style.css", []() {
-      sendFile("/web/style.css", "text/css");
-    });
-    // server.on("/js/Chart.bundle.min.js", []() {
-    //   sendFile("/web/js/Chart.bundle.min.js", "application/javascript");
-    // });
-    server.onNotFound(handleNotFound);
-    server.on("/settings", handleSettings);
-
-    server.on("/settings.html", handleSettings);
-    server.on("/savenetworksettings", handleSaveNetworkSettings);
-    server.on("/savemeasurmentsettings", handleSaveMeasurementSettings);
-    server.on("/saveinputsettings", handleSaveInputSettings);
-    server.on("/index.html", handleRoot);
-
-    server.on("/measurements/whole", [] {
-      server.send(200, "text/plain", String(pulseCounter/PULSES_PER_LITER));
-    });
-
-    server.on("/measurements/day", handleDay);
-    server.on("/measurements/month", handleMonth);
-    server.on("/measurements/year", handleYear);
-
-    server.on("/measurements/details", handleDetails);
-
-    server.begin();
-  }
-  else
-  {
-    access_point_initialize();
-    server.on("/", handleAPSettings);
-    server.on("/apsettings.html", handleAPSettings);
-    server.on("/save", handleSaveAPSettings);
-    server.on("/style.css", []() {
-      sendFile("/web/style.css", "text/css");
-    });
-    server.onNotFound(handleNotFound);
-    server.begin();
-    ACCESS_POINT_WORING = true;
-  }
-
+  networkInit();
 }
 
 void loop()
@@ -176,7 +106,7 @@ void loop()
 
   if (time_millis - last_time_of_save > SAVE_PERIOD)
   {
-    saving_routine();
+    savingRoutine();
     delay(0);
     if (WiFi.status() == WL_CONNECTED)
     {
@@ -187,13 +117,13 @@ void loop()
 
   if (NETWORK_CHANGED_RESTART_NOW)
   {
-    save_network_informations(saved_ssid, saved_password);
+    saveNetworkInformation(saved_ssid, saved_password);
     resetFunc();
   }
 
   if (AP_NETWORK_CHANGED_RESTART_NOW)
   {
-    save_network_informations(saved_ssid, saved_password);
+    saveNetworkInformation(saved_ssid, saved_password);
     save_pulses_per_liter();
     resetFunc();
   }
@@ -213,236 +143,139 @@ void loop()
   }
 }
 
-void saveMeasurement(uint32_t value, uint32_t delta)
-{
-  /*
-  *
-  * Wczytywanie czasu
-  * 
-  */
-
-  // timeClient.update();
-
-
-  /*
-  *
-  * Tworzenie pomiaru
-  * 
-  */
-
-  Serial.println(delta);
-  Serial.println(PULSES_PER_LITER);
-  Serial.println(lastMeasurement);
-
-  uint32_t valid_delta = delta / PULSES_PER_LITER;
-
-  uint32_t valid_value = value / PULSES_PER_LITER;
-
-  Serial.println(valid_delta);
-
-  Measurement measurement;
-  measurement.time = getCurrentTime();
-  measurement.value = valid_value;
-  measurement.delta = valid_delta;
-
-  /*
-  *
-  * Zapisywanie pomiaru
-  * 
-  */
-  // Serial.print("Saving measurement: {\n\tvalue:");
-  //Serial.print(measurement.value);
-  //Serial.print(",\n\ttime: ");
-  //Serial.print(measurement.time);
-  //Serial.print("\n}");
-
-  String filename = "/data/" + String(getCurrentDate());
-  filename.concat(".csv");
-  csv = SD.open(filename, FILE_WRITE);
-
-  //CHANGED!
-  //now time,delta,value
-  String buf = String(measurement.time);
-  buf.concat(",");
-  buf.concat(measurement.delta);
-  buf.concat(",");
-  buf.concat(measurement.value);
-
-  csv.println(buf);
-  csv.close();
-
-  if (valid_delta != 0)
-  {
-    lastMeasurement+=valid_delta*PULSES_PER_LITER;
-  }
-}
-
-void saving_routine()
+void savingRoutine()
 {
   delay(0);
   last_time_of_save = time_millis;
-
-  //if day chnged, create new file
-  // if (ts.getDayNumber() != dayNumber)
-  // {
-  //   // dayNumber = TimeService::getInstance().getDayNumber();
-  // }
 
   saveMeasurement(pulseCounter, pulseCounter - lastMeasurement);
 
   save_counter_value();
 }
 
-bool system_initialize()
+bool sdInitialize()
 {
-
-  Serial.begin(115200);
-  delay(10);
-
-  //system_update_cpu_freq(SYS_CPU_160MHZ);
-
-  return true;
-}
-
-bool sd_initialize()
-{
-
-  //Serial.print("Initializing SD card...");
-
   if (!SD.begin(PIN_CS))
   {
-    //Serial.println("initialization failed!");
     return false;
   }
-  //Serial.println("initialization done.");
   return true;
 }
 
-bool interrupts_initialize()
+bool interruptsInitialize()
 {
-
   pinMode(PIN_PULSE_COUNTER, INPUT_PULLUP);
   attachInterrupt(digitalPinToInterrupt(PIN_PULSE_COUNTER), handleInterrupt, FALLING);
 
   return true;
 }
 
-bool wifi_initialize()
-{
+// bool wifiInitialize()
+// {
+//   get_network_informations();
 
-  get_network_informations();
+//   if (network.ssid.isEmpty())
+//   {
+//     return false;
+//   }
 
-  if (network.ssid.isEmpty())
-  {
-    return false;
-  }
+//   WiFi.mode(WIFI_STA);
+//   WiFi.disconnect();
+//   delay(200);
 
-  WiFi.mode(WIFI_STA);
-  WiFi.disconnect();
-  delay(200);
+//   WiFi.begin(network.ssid, network.password);
 
-  WiFi.begin(network.ssid, network.password);
+//   initialization_time_start = millis();
 
-  initialization_time_start = millis();
+//   bool change = false;
 
-  bool change = false;
+//   while (WiFi.status() != WL_CONNECTED)
+//   {
+//     if (change)
+//     {
+//       lcdWrite("Connecting to", network.ssid.substring(0, 16));
+//       change = false;
+//     }
+//     else
+//     {
+//       lcdWrite("Connecting to", network.ssid.substring(0, 10) + "******");
+//       change = true;
+//     }
+//     delay(1000);
+//     Serial.print(".");
 
-  while (WiFi.status() != WL_CONNECTED)
-  {
-    if (change)
-    {
-      lcdWrite("Connecting to", network.ssid.substring(0, 16));
-      change = false;
-    }
-    else
-    {
-      lcdWrite("Connecting to", network.ssid.substring(0, 10) + "******");
-      change = true;
-    }
-    delay(1000);
-    Serial.print(".");
+//     initialization_time = millis();
 
-    initialization_time = millis();
+//     if (initialization_time - initialization_time_start > MAX_WIFI_INTIALIZE_TIME)
+//     {
+//       lcdWrite("NW con. failed!", "Turning on AP");
+//       delay(2000);
+//       return false;
+//     }
+//   }
+//   lcdWrite("NW Connection", "successfull!");
+//   delay(2000);
 
-    if (initialization_time - initialization_time_start > MAX_WIFI_INTIALIZE_TIME)
-    {
-      //Serial.println("Wifi initialization failed! Creating access point");
-      lcdWrite("NW con. failed!", "Turning on AP");
-      delay(2000);
-      return false;
-    }
-  }
-  lcdWrite("NW Connection", "successfull!");
-  delay(2000);
+//   lcdWrite("NW " + network.ssid.substring(0, 13), WiFi.localIP().toString() + "/");
 
-  //Serial.println("");
-  //Serial.println("WiFi connected");
-  //Serial.println("IP address: ");
-  //Serial.println(WiFi.localIP());
-  lcdWrite("NW " + network.ssid.substring(0, 13), WiFi.localIP().toString() + "/");
+//   return true;
+// }
 
-  return true;
-}
+// bool access_point_initialize()
+// {
 
-bool access_point_initialize()
-{
+//   WiFi.mode(WIFI_AP);
+//   WiFi.disconnect();
+//   delay(200);
 
-  WiFi.mode(WIFI_AP);
-  WiFi.disconnect();
-  delay(200);
+//   WiFi.softAPConfig(localIp, gateway, subnet);
+//   WiFi.softAP(ACCESS_POINT_NETWORK_NAME);
 
-  WiFi.softAPConfig(localIp, gateway, subnet);
-  WiFi.softAP(ACCESS_POINT_NETWORK_NAME);
+//   lcdWrite("AP " + ACCESS_POINT_NETWORK_NAME, ACCESS_POINT_IP_STRING);
 
-  //Serial.println("Acces Point is working");
-  //Serial.print("Network ");
-  //Serial.println(ACCESS_POINT_NETWORK_NAME);
-  //Serial.println("Watermeter IP: " + localIp.toString());
-  lcdWrite("AP " + ACCESS_POINT_NETWORK_NAME, ACCESS_POINT_IP_STRING);
+//   return true;
+// }
 
-  return true;
-}
+// void save_network_informations(String ssid, String password)
+// {
 
-void save_network_informations(String ssid, String password)
-{
+//   SD.remove(NETWORKFILE);
 
-  SD.remove(NETWORKFILE);
+//   network_file = SD.open(NETWORKFILE, FILE_WRITE);
 
-  network_file = SD.open(NETWORKFILE, FILE_WRITE);
+//   network_file.print(ssid);
+//   network_file.print("\n");
+//   network_file.print(password);
+//   network_file.print("\n");
 
-  network_file.print(ssid);
-  network_file.print("\n");
-  network_file.print(password);
-  network_file.print("\n");
+//   network_file.close();
 
-  network_file.close();
+//   lcdWrite("Saving & resetin", ssid.substring(0, 16));
+//   delay(2000);
+// }
 
-  lcdWrite("Saving & resetin", ssid.substring(0, 16));
-  delay(2000);
-}
+// void get_network_informations()
+// {
+//   if (!SD.exists(NETWORKFILE))
+//   {
+//     network.ssid = "";
+//     return;
+//   }
 
-void get_network_informations()
-{
-  if (!SD.exists(NETWORKFILE))
-  {
-    network.ssid = "";
-    return;
-  }
+//   network_file = SD.open(NETWORKFILE, FILE_READ);
 
-  network_file = SD.open(NETWORKFILE, FILE_READ);
+//   if (!network_file)
+//   {
+//     network.ssid = "";
+//     return;
+//   }
 
-  if (!network_file)
-  {
-    network.ssid = "";
-    return;
-  }
+//   ssid = network_file.readStringUntil('\n');
+//   password = network_file.readStringUntil('\n');
 
-  ssid = network_file.readStringUntil('\n');
-  password = network_file.readStringUntil('\n');
-
-  network.ssid = ssid;
-  network.password = password;
-}
+//   network.ssid = ssid;
+//   network.password = password;
+// }
 
 void wireSetup()
 {
@@ -481,64 +314,6 @@ void save_measurement_period()
   measurementperiod_file.close();
 }
 
-void get_measurement_period()
-{
-
-  if (!SD.exists(MEASUREMENT_PERIOD_FILE))
-  {
-    return;
-  }
-
-  measurementperiod_file = SD.open(MEASUREMENT_PERIOD_FILE, FILE_READ);
-
-  if (!measurementperiod_file)
-  {
-    return;
-  }
-
-  measurement_period_as_string = measurementperiod_file.readStringUntil('\n');
-
-  int period = measurement_period_as_string.toInt();
-  if (period < 1 * SAVE_PERIOD_MULTIPLIER || period > 60 * SAVE_PERIOD_MULTIPLIER)
-  {
-    return;
-  }
-  else
-  {
-    SAVE_PERIOD = period;
-  }
-}
-
-void get_counter_value()
-{
-  if (!SD.exists(COUNTER_VALUE_FILE))
-  {
-    return;
-  }
-
-  countervalue_file = SD.open(COUNTER_VALUE_FILE, FILE_READ);
-
-  if (!countervalue_file)
-  {
-    return;
-  }
-
-  counter_value_as_string = countervalue_file.readStringUntil('\n');
-
-  counter_value_as_string.toCharArray(counter_value_buff, 20);
-
-  pulseCounter = strtoul(counter_value_buff, NULL, 10);
-
-  if (pulseCounter == ULONG_MAX)
-  {
-    pulseCounter = 0;
-  }
-
-  pulseCounter *= PULSES_PER_LITER;
-
-  lastMeasurement = pulseCounter;
-}
-
 void save_counter_value()
 {
 
@@ -551,35 +326,6 @@ void save_counter_value()
   countervalue_file.print("\n");
 
   countervalue_file.close();
-}
-
-void get_pulses_per_liter()
-{
-
-  if (!SD.exists(PULSES_PER_LITER_FILE))
-  {
-    PULSES_PER_LITER = 1;
-    return;
-  }
-
-  pulses_per_liter_f = SD.open(PULSES_PER_LITER_FILE, FILE_READ);
-
-  if (!pulses_per_liter_f)
-  {
-    PULSES_PER_LITER = 1;
-    return;
-  }
-
-  counter_value_as_string = pulses_per_liter_f.readStringUntil('\n');
-
-  counter_value_as_string.toCharArray(counter_value_buff, 20);
-
-  PULSES_PER_LITER = strtoul(counter_value_buff, NULL, 10);
-
-  if (PULSES_PER_LITER == 0)
-  {
-    PULSES_PER_LITER = 1;
-  }
 }
 
 void save_pulses_per_liter()

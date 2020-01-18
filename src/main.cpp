@@ -6,6 +6,7 @@
 #include <Wire.h>
 #include <LiquidCrystal_I2C.h>
 #include <RtcDS3231.h>
+#include "LcdLogger.h"
 
 String ssid, password;
 
@@ -30,8 +31,6 @@ long initialization_time_start, initialization_time;
 bool sd_initialization_result;
 
 byte error, address;
-
-LiquidCrystal_I2C lcd(0, 0, 0);
 
 unsigned long interrupt_time;
 
@@ -82,8 +81,6 @@ void get_network_informations();
 void (*resetFunc)(void) = 0;
 
 void wireSetup();
-void lcdSetup();
-void write_on_lcd(String first_line, String second_line = "");
 
 void error_loop();
 
@@ -106,7 +103,7 @@ void setup()
 
   if (!sd_initialize())
   {
-    write_on_lcd("SD Card Error!", "Check and reset");
+    lcdWrite("SD Card Error!", "Check and reset");
     error_loop();
   }
 
@@ -183,7 +180,7 @@ void loop()
     delay(0);
     if (WiFi.status() == WL_CONNECTED)
     {
-      write_on_lcd("NW " + network.ssid.substring(0, 13), WiFi.localIP().toString() + "/");
+      lcdWrite("NW " + network.ssid.substring(0, 13), WiFi.localIP().toString() + "/");
     }
   }
   delay(0);
@@ -354,12 +351,12 @@ bool wifi_initialize()
   {
     if (change)
     {
-      write_on_lcd("Connecting to", network.ssid.substring(0, 16));
+      lcdWrite("Connecting to", network.ssid.substring(0, 16));
       change = false;
     }
     else
     {
-      write_on_lcd("Connecting to", network.ssid.substring(0, 10) + "******");
+      lcdWrite("Connecting to", network.ssid.substring(0, 10) + "******");
       change = true;
     }
     delay(1000);
@@ -370,19 +367,19 @@ bool wifi_initialize()
     if (initialization_time - initialization_time_start > MAX_WIFI_INTIALIZE_TIME)
     {
       //Serial.println("Wifi initialization failed! Creating access point");
-      write_on_lcd("NW con. failed!", "Turning on AP");
+      lcdWrite("NW con. failed!", "Turning on AP");
       delay(2000);
       return false;
     }
   }
-  write_on_lcd("NW Connection", "successfull!");
+  lcdWrite("NW Connection", "successfull!");
   delay(2000);
 
   //Serial.println("");
   //Serial.println("WiFi connected");
   //Serial.println("IP address: ");
   //Serial.println(WiFi.localIP());
-  write_on_lcd("NW " + network.ssid.substring(0, 13), WiFi.localIP().toString() + "/");
+  lcdWrite("NW " + network.ssid.substring(0, 13), WiFi.localIP().toString() + "/");
 
   return true;
 }
@@ -401,7 +398,7 @@ bool access_point_initialize()
   //Serial.print("Network ");
   //Serial.println(ACCESS_POINT_NETWORK_NAME);
   //Serial.println("Watermeter IP: " + localIp.toString());
-  write_on_lcd("AP " + ACCESS_POINT_NETWORK_NAME, ACCESS_POINT_IP_STRING);
+  lcdWrite("AP " + ACCESS_POINT_NETWORK_NAME, ACCESS_POINT_IP_STRING);
 
   return true;
 }
@@ -420,7 +417,7 @@ void save_network_informations(String ssid, String password)
 
   network_file.close();
 
-  write_on_lcd("Saving & resetin", ssid.substring(0, 16));
+  lcdWrite("Saving & resetin", ssid.substring(0, 16));
   delay(2000);
 }
 
@@ -461,34 +458,6 @@ void wireSetup()
       break;
     }
   }
-}
-
-void lcdSetup()
-{
-
-  lcd = LiquidCrystal_I2C(address, lcdColumns, lcdRows);
-
-  lcd.init(PIN_SDA, PIN_SCL);
-  lcd.backlight();
-
-  lcd.setCursor(0, 0);
-  write_on_lcd("Turning on...");
-  delay(1500);
-}
-
-//each string must be at most 16 characters (including whitespaces)!
-void write_on_lcd(String first_line, String second_line)
-{
-  lcd.clear();
-  delay(0);
-  lcd.setCursor(0, 0);
-  delay(0);
-  lcd.print(first_line);
-  delay(0);
-  lcd.setCursor(0, 1);
-  delay(0);
-  lcd.print(second_line);
-  delay(0);
 }
 
 void error_loop()

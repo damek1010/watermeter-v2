@@ -1,3 +1,6 @@
+#ifndef MEASUREMENT_H
+#define MEASUREMENT_H
+
 #include <Arduino.h>
 #include <SD.h>
 #include "Constants.h"
@@ -94,3 +97,19 @@ void loadCounterValue()
 
     lastMeasurement = pulseCounter;
 }
+
+void saveCounterValue()
+{
+
+  SD.remove(COUNTER_VALUE_FILE);
+  delay(0);
+  File countervalueFile = SD.open(COUNTER_VALUE_FILE, FILE_WRITE);
+  delay(0);
+
+  countervalueFile.print(pulseCounter / PULSES_PER_LITER);
+  countervalueFile.print("\n");
+
+  countervalueFile.close();
+}
+
+#endif

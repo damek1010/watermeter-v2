@@ -1,3 +1,6 @@
+#ifndef LCD_LOGGER_H
+#define LCD_LOGGER_H
+
 #include <Arduino.h>
 #include <LiquidCrystal_I2C.h>
 #include "Constants.h"
@@ -26,3 +29,5 @@ void lcdWrite(String first_line, String second_line)
   lcd->setCursor(0, 1);
   lcd->print(second_line);
 }
+
+#endif

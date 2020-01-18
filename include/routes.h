@@ -1,11 +1,12 @@
 #ifndef ROUTES_H
 #define ROUTES_H
 
-#include "Arduino.h"
+#include <Arduino.h>
 #include <ESP8266WebServer.h>
 #include <SD.h>
 #include "Constants.h"
 #include "TimeService.h"
+#include "Config.h"
 
 ESP8266WebServer server(80);
 
@@ -14,9 +15,7 @@ bool MEASUREMENT_PERIOD_CHANGED = false;
 bool PULSES_PER_LITER_CHANGED = false;
 bool AP_NETWORK_CHANGED_RESTART_NOW = false;
 
-unsigned long SAVE_PERIOD = DEFAULT_SAVE_PERIOD * SAVE_PERIOD_MULTIPLIER;
-
-int PULSES_PER_LITER = 1;
+// int PULSES_PER_LITER = 1;
 
 String saved_ssid, saved_password, saved_pulses;
 

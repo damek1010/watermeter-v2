@@ -4,4 +4,7 @@
 .vscode/launch.json
 .vscode/ipch
 include/Constants.h
-web/
+.DS_Store
+web/*.txt
+web/*.json
+.idea

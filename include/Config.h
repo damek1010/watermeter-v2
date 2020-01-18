@@ -45,6 +45,19 @@ void loadPulsesPerLiter()
     }
 }
 
+void savePulsesPerLiter()
+{
+  SD.remove(PULSES_PER_LITER_FILE);
+  delay(0);
+  File pulsesPerLiterFile = SD.open(PULSES_PER_LITER_FILE, FILE_WRITE);
+  delay(0);
+
+  pulsesPerLiterFile.print(PULSES_PER_LITER);
+  pulsesPerLiterFile.print("\n");
+
+  pulsesPerLiterFile.close();
+}
+
 void loadMeasurementPeriod()
 {
 
@@ -71,6 +84,19 @@ void loadMeasurementPeriod()
   {
     SAVE_PERIOD = period;
   }
+}
+
+void saveMeasurementPeriod()
+{
+  SD.remove(MEASUREMENT_PERIOD_FILE);
+  delay(10);
+  File measurementPeriodFile = SD.open(MEASUREMENT_PERIOD_FILE, FILE_WRITE);
+  delay(0);
+
+  measurementPeriodFile.print(SAVE_PERIOD);
+  measurementPeriodFile.print("\n");
+
+  measurementPeriodFile.close();
 }
 
 #endif

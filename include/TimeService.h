@@ -15,7 +15,8 @@ WiFiUDP ntpUDP;
 
 NTPClient timeClient(ntpUDP, "europe.pool.ntp.org", 3600, 60000);
 
-String getFormattedDateTime(const char* format) {
+String getFormattedDateTime(const char *format)
+{
   time_t rawtime = Rtc.GetDateTime().Epoch32Time();
   struct tm ts = *localtime(&rawtime);
   char buf[20];
@@ -29,12 +30,16 @@ String getCurrentDate()
   return getFormattedDateTime("%Y-%m-%d");
 }
 
-String getCurrentTime() {
+String getCurrentTime()
+{
   return getFormattedDateTime("%H:%M:%S");
 }
 
 void initRtc()
 {
+  timeClient.begin();
+  timeClient.update();
+
   Rtc.Begin();
 
   char dateBuf[20];
@@ -43,8 +48,6 @@ void initRtc()
   struct tm ts = *localtime(&rawtime);
   strftime(dateBuf, sizeof(dateBuf), "%b %d %Y", &ts);
   strftime(timeBuf, sizeof(timeBuf), "%H:%M:%S", &ts);
-
-  Serial.println(dateBuf);
 
   RtcDateTime datetime = RtcDateTime(dateBuf, timeBuf);
 
@@ -69,7 +72,8 @@ void initRtc()
   }
 
   RtcDateTime now = Rtc.GetDateTime();
-  if (now < datetime) {
+  if (now < datetime)
+  {
     Rtc.SetDateTime(datetime);
   }
 
